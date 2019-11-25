@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'gui.ui'
 #
-# Created by: PyQt5 UI code generator 5.13.1
+# Created by: PyQt5 UI code generator 5.13.0
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -1706,6 +1706,9 @@ class Ui_MainWindow(object):
         self.t_pkmn_i.addWidget(self.t_pkmn_i_2)
         self.t_pkmn_form = QtWidgets.QPushButton(self.t_pkmn)
         self.t_pkmn_form.setGeometry(QtCore.QRect(540, 10, 60, 60))
+        self.t_pkmn_form.setStyleSheet("#t_pkmn_form:flat{border:none}")
+        self.t_pkmn_form.setText("")
+        self.t_pkmn_form.setFlat(True)
         self.t_pkmn_form.setObjectName("t_pkmn_form")
         self.t_pkmn_i.raise_()
         self.t_pkmn_icon.raise_()
@@ -1795,7 +1798,6 @@ class Ui_MainWindow(object):
         self.i_pkmn_by_type.setText(_translate("MainWindow", "by Type"))
         self.i_pkmn_by_number.setText(_translate("MainWindow", "by Number"))
         self.i_pkmn_search_bar.setPlaceholderText(_translate("MainWindow", "Search"))
-        self.t_pkmn_form.setText(_translate("MainWindow", "Form"))
 import images_rc
 import resources_rc
 import sprites_rc
