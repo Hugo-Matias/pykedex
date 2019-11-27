@@ -1,5 +1,5 @@
 import sys, sqlite3
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QCursor
 from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem
 from PyQt5.QtCore import Qt, QEvent, QSettings
 from gui import Ui_MainWindow
@@ -18,7 +18,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         #
         self.conn = sqlite3.connect('db.sqlite')
         # USER SETTINGS
-        self.caught_pokemon = {}
+        self.caught_pokemon = {}  #TODO
         # GLOBAL VARIABLES
         self.generation_id = 1
         self.pokedex_id = 2
@@ -39,6 +39,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         # POKEMON VIEW VARIABLES
         self.pokemon_display_page = 1
         self.selected_pokemon_row = 0
+        self.calculated_ivs = {}
+        # POKEMON VIEW GUI ELEMENTS (EVENT INSTALLERS)
         self.mode_btns = [(1, self.i_pkmn_mode_img_btn),
                           (2, self.i_pkmn_mode_stats_btn),
                           (3, self.i_pkmn_mode_moves_btn),
@@ -52,7 +54,17 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         self.ability_names = [self.d_pkmn_i_2_i_d_ability_1,
                               self.d_pkmn_i_2_i_d_ability_2,
                               self.d_pkmn_i_2_i_d_hidden_ability]
-        self.calculated_ivs = {}
+        self.evo_sprites = []
+        for evo_sprite in range(1, 5):
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_' + str(evo_sprite)))
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_2_4_' + str(evo_sprite)))
+        for evo_sprite_2 in [1, 2]:
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_2_2_' + str(evo_sprite_2)))
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_3_2_' + str(evo_sprite_2)))
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(evo_sprite_2)))
+        for evo_sprite_9 in range (1, 10):
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_3_9_' + str(evo_sprite_9)))
+            self.evo_sprites.append(eval('self.d_pkmn_i_2_i_evo_sprite_4_9_' + str(evo_sprite_9)))
         #
         # POKEDEX VIEW INTERACTIONS
         #
@@ -92,6 +104,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             stats_btn[1].installEventFilter(self)
         for ability in self.ability_names:
             ability.installEventFilter(self)
+        for evo_chain_sprite in self.evo_sprites:
+            evo_chain_sprite.installEventFilter(self)
 
         #
         # START-UP FUNCTIONS
@@ -249,7 +263,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
                     self.game_selected = self.game_versions[1]
                 self.set_pokedex()
 
-        # Pokemon Mode View Buttons
+        # Pokemon Mode View Buttons: IMG | STATS | MOVES | LOC
 
         for mode_btn in self.mode_btns:
             button_style = '#' + mode_btn[1].objectName() + ':flat {border: none}' \
@@ -271,6 +285,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
                     (source == self.d_pkmn_i_2_sprite_b or source == self.d_pkmn_i_2_sprite_f):
                 self.set_sprites(False)
 
+            # Ability description on statusbar on mouse hover, TODO clean description markdown
             if event.type() == QEvent.Enter and source in self.ability_names:
                 if source.objectName() == 'd_pkmn_i_2_i_d_ability_1':
                     if self.pokemon['abilities'][0]:
@@ -281,6 +296,84 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
                 elif source.objectName() == 'd_pkmn_i_2_i_d_hidden_ability':
                     if self.pokemon['abilities'][2]:
                         self.statusbar.showMessage(self.pokemon['abilities'][2][1], 10000)
+
+            def manage_evolution_states(index):
+                if event.type() == QEvent.MouseButtonPress and source == sprite_label:
+                    set_evo_pokemon_list_row(pokemon)
+                if event.type() == QEvent.Enter and source == sprite_label:
+                    source.setCursor(QCursor(Qt.PointingHandCursor))
+                    description = self.set_evolution_description(pokemon)
+                    if index == 2:
+                        self.d_pkmn_i_2_i_evo_desc_base.setText(description)
+                        self.d_pkmn_i_2_i_evo_desc_base.show()
+
+                    elif index == 3:
+                        self.d_pkmn_i_2_i_evo_desc_stage_1.setText(description)
+                        self.d_pkmn_i_2_i_evo_desc_stage_1.show()
+
+                    elif index == 4:
+                        self.d_pkmn_i_2_i_evo_desc_stage_2.setText(description)
+                        self.d_pkmn_i_2_i_evo_desc_stage_2.show()
+
+                if event.type() == QEvent.Leave and source == sprite_label:
+                    labels = [self.d_pkmn_i_2_i_evo_desc_base,
+                              self.d_pkmn_i_2_i_evo_desc_stage_1,
+                              self.d_pkmn_i_2_i_evo_desc_stage_2]
+                    for lbl in labels:
+                        lbl.hide()
+
+            def set_evo_pokemon_list_row(pokemon):  # Click Pokemon evo stage to select it by its pokedex #/list row
+                if 0 <= self.pokedex_id <= 7 or 10 <= self.pokedex_id:
+                    self.m_pkmn_list.setCurrentRow(pokemon[0] - 1)
+                elif 8 <= self.pokedex_id <= 9:  # Victini is number 0, this will add an exception for Unova dex
+                    self.m_pkmn_list.setCurrentRow(pokemon[0])
+
+            # Manages evolution chain stages, including pokemons with branched evolutions
+            for index in range(1, 5):
+                sprite_label = eval('self.d_pkmn_i_2_i_evo_sprite_' + str(index))
+                if index == 1 and self.pokemon['evo_data']['baby']:
+                    for pokemon in self.pokemon['evo_data']['baby']:
+                        manage_evolution_states(index)
+
+                elif index == 2 and self.pokemon['evo_data']['base']:
+                    if len(self.pokemon['evo_data']['base']) == 1:
+                        pokemon = self.pokemon['evo_data']['base'][0]
+                        manage_evolution_states(index)
+                    elif len(self.pokemon['evo_data']['base']) == 2:
+                        for pokemon in self.pokemon['evo_data']['base']:
+                            sprite_label = eval('self.d_pkmn_i_2_i_evo_sprite_2_2_' +
+                                                str(self.pokemon['evo_data']['base'].index(pokemon) + 1))
+                            manage_evolution_states(index)
+                    elif len(self.pokemon['evo_data']['base']) > 2:
+                        for pokemon in self.pokemon['evo_data']['base']:
+                            sprite_label = eval('self.d_pkmn_i_2_i_evo_sprite_2_4_' +
+                                                str(self.pokemon['evo_data']['base'].index(pokemon) + 1))
+                            manage_evolution_states(index)
+
+                elif index == 3:
+                    if len(self.pokemon['evo_data']['stg_1']) == 1:
+                        pokemon = self.pokemon['evo_data']['stg_1'][0]
+                        manage_evolution_states(index)
+                    elif len(self.pokemon['evo_data']['stg_1']) == 2:
+                        for pokemon in self.pokemon['evo_data']['stg_1']:
+                            sprite_label = eval('self.d_pkmn_i_2_i_evo_sprite_3_2_' +
+                                                str(self.pokemon['evo_data']['stg_1'].index(pokemon) + 1))
+                            manage_evolution_states(index)
+                    elif len(self.pokemon['evo_data']['stg_1']) > 2:
+                        for pokemon in self.pokemon['evo_data']['stg_1']:
+                            sprite_label = eval('self.d_pkmn_i_2_i_evo_sprite_3_9_' +
+                                                str(self.pokemon['evo_data']['stg_1'].index(pokemon) + 1))
+                            manage_evolution_states(index)
+
+                elif index == 4:
+                    if len(self.pokemon['evo_data']['stg_2']) == 1:
+                        pokemon = self.pokemon['evo_data']['stg_2'][0]
+                        manage_evolution_states(index)
+                    elif len(self.pokemon['evo_data']['stg_2']) == 2:
+                        for pokemon in self.pokemon['evo_data']['stg_2']:
+                            sprite_label = eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' +
+                                                str(self.pokemon['evo_data']['stg_2'].index(pokemon) + 1))
+                            manage_evolution_states(index)
 
         return super(MainWindow, self).eventFilter(source, event)
 

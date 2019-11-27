@@ -1,10 +1,10 @@
 import re
 from PyQt5.QtGui import QPixmap, QFontMetrics
 from PyQt5.QtCore import Qt
-from objects import pokemon
+from objects import pokemon, writer
 
 
-class PokemonView(pokemon.PokemonObject):
+class PokemonView(pokemon.PokemonObject, writer.Writer):
     def create_pokemon_list(self):
         pokemon_list = self.fetch_db_join('pokemon_dex_numbers.pokedex_number, '
                                           'pokemon_species_names.name, '
@@ -169,6 +169,53 @@ class PokemonView(pokemon.PokemonObject):
 
             # EVOLUTION CHAIN
 
+            # Resets evolution item icons
+            for i in range(1, 4):
+                eval('self.d_pkmn_i_2_i_evo_item_' + str(i) + '.hide()')
+            self.d_pkmn_i_2_i_evo_item_2_2.hide()
+            self.d_pkmn_i_2_i_evo_item_3_2.hide()
+
+            def send_pokemon_to_get_item_icon(pokemon, phase, branched=False):
+                if len(pokemon) > 1:
+                    if pokemon[3]:
+                        self.set_item_icons(pokemon[3], phase, branched)
+                    elif pokemon[7]:
+                        self.set_item_icons(pokemon[7], phase, branched)
+
+            if self.pokemon['evo_data']['baby']:
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['baby'][0], 1)
+            if self.pokemon['evo_data']['base']:
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['base'][0], 2)
+            if len(self.pokemon['evo_data']['stg_1']) == 1:
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][0], 3)
+            elif len(self.pokemon['evo_data']['stg_1']) == 2:
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][0], 3)
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][1], 3, branched=True)
+            if len(self.pokemon['evo_data']['stg_2']) == 1:
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][0], 4)
+            elif len(self.pokemon['evo_data']['stg_2']) == 2:
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][0], 4)
+                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][1], 4, branched=True)
+
+    def set_item_icons(self, item_id, phase, branched=False):
+        pixmap = QPixmap(':/item/item/' + str(item_id) + '.png')
+        if phase == 1:
+            pass
+        elif phase == 2:
+            self.d_pkmn_i_2_i_evo_item_1.setPixmap(pixmap)
+            self.d_pkmn_i_2_i_evo_item_1.show()
+        elif phase == 3 and not branched:
+            self.d_pkmn_i_2_i_evo_item_2.setPixmap(pixmap)
+            self.d_pkmn_i_2_i_evo_item_2.show()
+        elif phase == 3 and branched:
+            self.d_pkmn_i_2_i_evo_item_2_2.setPixmap(pixmap)
+            self.d_pkmn_i_2_i_evo_item_2_2.show()
+        elif phase == 4 and not branched:
+            self.d_pkmn_i_2_i_evo_item_3.setPixmap(pixmap)
+            self.d_pkmn_i_2_i_evo_item_3.show()
+        elif phase == 4 and branched:
+            self.d_pkmn_i_2_i_evo_item_3_2.setPixmap(pixmap)
+            self.d_pkmn_i_2_i_evo_item_3_2.show()
 
     def set_imgs(self):
         species_id = str(self.pokemon['species_id'])
@@ -216,7 +263,7 @@ class PokemonView(pokemon.PokemonObject):
         species_id = str(self.pokemon['species_id'])
         evo_chain = [self.pokemon['evo_chain'][p] for p in self.pokemon['evo_chain']]
 
-        # Modern games don't used sprites, BW style ones used
+        # Modern games don't use sprites, BW style ones used
         # https://www.smogon.com/forums/threads/xy-sprite-project-read-1st-post-release-v1-1-on-post-3240.3486712/
         # https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/
         if int(version) >= 12 or int(version) == 0:
@@ -240,28 +287,61 @@ class PokemonView(pokemon.PokemonObject):
             self.d_pkmn_i_2_sprite_f.setPixmap(sprite_front)
             self.d_pkmn_i_2_sprite_b.setPixmap(sprite_back)
 
+        # Evolution chain sprites TODO some refactoring
         for i in range(1, 5):
-            empty_pixmap = QPixmap(':/img/buttons/pokedex/disabled.png')
             if i == 1:
                 evo_stage = evo_chain[0][0]
-            elif i == 2:
+            elif i == 2 and len(evo_chain[1]) == 1:
+                for evo_sprite_2_2 in (1, 2):  # For Phione/Manaphy line
+                    eval('self.d_pkmn_i_2_i_evo_sprite_2_2_' + str(evo_sprite_2_2)).hide()
+                for evo_sprite_2_4 in range(1, 5):  # For Tyrogue line
+                    eval('self.d_pkmn_i_2_i_evo_sprite_2_4_' + str(evo_sprite_2_4)).hide()
                 evo_stage = evo_chain[1][0]
             elif i == 3 and len(evo_chain[2]) == 1:
-                for evo_sprite_3_9 in range(1, 10):
-                    eval('self.d_pkmn_i_2_i_evo_sprite_3_9_' + str(evo_sprite_3_9)).setPixmap(empty_pixmap)
                 for evo_sprite_3_2 in (1, 2):
-                    eval('self.d_pkmn_i_2_i_evo_sprite_3_2_' + str(evo_sprite_3_2)).setPixmap(empty_pixmap)
+                    eval('self.d_pkmn_i_2_i_evo_sprite_3_2_' + str(evo_sprite_3_2)).hide()
+                for evo_sprite_3_9 in range(1, 10):  # For Eevee line
+                    eval('self.d_pkmn_i_2_i_evo_sprite_3_9_' + str(evo_sprite_3_9)).hide()
                 evo_stage = evo_chain[2][0]
             elif i == 4 and len(evo_chain[3]) == 1:
-                for evo_sprite_4_9 in range(1, 10):
-                    eval('self.d_pkmn_i_2_i_evo_sprite_4_9_' + str(evo_sprite_4_9)).setPixmap(empty_pixmap)
                 for evo_sprite_4_2 in (1, 2):
-                    eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(evo_sprite_4_2)).setPixmap(empty_pixmap)
+                    eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(evo_sprite_4_2)).hide()
+                for evo_sprite_4_9 in range(1, 10):
+                    eval('self.d_pkmn_i_2_i_evo_sprite_4_9_' + str(evo_sprite_4_9)).hide()
                 evo_stage = evo_chain[3][0]
 
             sprite_evo_label = eval('self.d_pkmn_i_2_i_evo_sprite_' + str(i))
             sprite_evo = QPixmap(f':/pokemon/pokemon/sprites/{version_group}/{evo_stage}.png')
             sprite_evo_label.setPixmap(sprite_evo)
+            sprite_evo_label.show()
+
+            # For pokemon with branched evolutions like Eevee
+
+            if len(evo_chain[1]) == 2 and i == 2:
+                for n in range(len(evo_chain[1])):
+                    evo_stage = evo_chain[1][n]
+                    sprite_evo_label = eval('self.d_pkmn_i_2_i_evo_sprite_2_2_' + str(n + 1))
+                    sprite_evo = QPixmap(f':/pokemon/pokemon/sprites/{version_group}/{evo_stage}.png')
+                    sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
+                                                                 Qt.KeepAspectRatio,
+                                                                 Qt.SmoothTransformation))
+                    sprite_evo_label.show()
+                    self.d_pkmn_i_2_i_evo_sprite_2.hide()
+                    for evo_sprite_2_4 in range(1, 5):
+                        eval('self.d_pkmn_i_2_i_evo_sprite_2_4_' + str(evo_sprite_2_4)).hide()
+
+            if len(evo_chain[1]) > 2 and i == 2:
+                for n in range(len(evo_chain[1])):
+                    evo_stage = evo_chain[1][n]
+                    sprite_evo_label = eval('self.d_pkmn_i_2_i_evo_sprite_2_4_' + str(n + 1))
+                    sprite_evo = QPixmap(f':/pokemon/pokemon/sprites/{version_group}/{evo_stage}.png')
+                    sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
+                                                                 Qt.KeepAspectRatio,
+                                                                 Qt.SmoothTransformation))
+                    sprite_evo_label.show()
+                    self.d_pkmn_i_2_i_evo_sprite_2.hide()
+                    for evo_sprite_2_2 in (1, 2):
+                        eval('self.d_pkmn_i_2_i_evo_sprite_2_2_' + str(evo_sprite_2_2)).hide()
 
             if len(evo_chain[2]) == 2 and i == 3:
                 for j in range(len(evo_chain[2])):
@@ -271,18 +351,10 @@ class PokemonView(pokemon.PokemonObject):
                     sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
                                                                  Qt.KeepAspectRatio,
                                                                  Qt.SmoothTransformation))
-                    self.d_pkmn_i_2_i_evo_sprite_3.setPixmap(empty_pixmap)
-
-
-            if len(evo_chain[3]) == 2 and i == 4:
-                for k in range(len(evo_chain[3])):
-                    evo_stage = evo_chain[3][k]
-                    sprite_evo_label = eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(k + 1))
-                    sprite_evo = QPixmap(f':/pokemon/pokemon/sprites/{version_group}/{evo_stage}.png')
-                    sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
-                                                                 Qt.KeepAspectRatio,
-                                                                 Qt.SmoothTransformation))
-                    self.d_pkmn_i_2_i_evo_sprite_4.setPixmap(empty_pixmap)
+                    sprite_evo_label.show()
+                    self.d_pkmn_i_2_i_evo_sprite_3.hide()
+                    for evo_sprite_3_9 in range(1, 10):
+                        eval('self.d_pkmn_i_2_i_evo_sprite_3_9_' + str(evo_sprite_3_9)).hide()
 
             if len(evo_chain[2]) > 2 and i == 3:
                 for j in range(len(evo_chain[2])):
@@ -292,8 +364,23 @@ class PokemonView(pokemon.PokemonObject):
                     sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
                                                                  Qt.KeepAspectRatio,
                                                                  Qt.SmoothTransformation))
-                    self.d_pkmn_i_2_i_evo_sprite_3.setPixmap(empty_pixmap)
+                    sprite_evo_label.show()
+                    self.d_pkmn_i_2_i_evo_sprite_3.hide()
+                    for evo_sprite_3_2 in (1, 2):
+                        eval('self.d_pkmn_i_2_i_evo_sprite_3_2_' + str(evo_sprite_3_2)).hide()
 
+            if len(evo_chain[3]) == 2 and i == 4:
+                for k in range(len(evo_chain[3])):
+                    evo_stage = evo_chain[3][k]
+                    sprite_evo_label = eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(k + 1))
+                    sprite_evo = QPixmap(f':/pokemon/pokemon/sprites/{version_group}/{evo_stage}.png')
+                    sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
+                                                                 Qt.KeepAspectRatio,
+                                                                 Qt.SmoothTransformation))
+                    sprite_evo_label.show()
+                    self.d_pkmn_i_2_i_evo_sprite_4.hide()
+                    for evo_sprite_4_9 in range(1, 10):
+                        eval('self.d_pkmn_i_2_i_evo_sprite_4_9_' + str(evo_sprite_4_9)).hide()
 
             if len(evo_chain[3]) > 2 and i == 4:
                 for k in range(len(evo_chain[3])):
@@ -303,7 +390,10 @@ class PokemonView(pokemon.PokemonObject):
                     sprite_evo_label.setPixmap(sprite_evo.scaled(sprite_evo_label.size(),
                                                                  Qt.KeepAspectRatio,
                                                                  Qt.SmoothTransformation))
-                    self.d_pkmn_i_2_i_evo_sprite_4.setPixmap(empty_pixmap)
+                    sprite_evo_label.show()
+                    self.d_pkmn_i_2_i_evo_sprite_4.hide()
+                    for evo_sprite_4_2 in (1, 2):
+                        eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(evo_sprite_4_2)).hide()
 
     def set_calculated_ivs(self):
         min_value_label = 'self.d_pkmn_i_2_i_iv_l_'
@@ -317,6 +407,10 @@ class PokemonView(pokemon.PokemonObject):
             label_max = eval(max_value_label + str(i))
             max_val = ivs['max'][i - 1]
             label_max.setText(str(max_val))
+
+    def set_evolution_description(self, pokemon):
+        description = self.write_evolution_description(pokemon)
+        return description
 
     def search_pkmn(self):
         query = self.i_pkmn_search_bar.text().lower().split()

@@ -29,6 +29,7 @@ class PokemonObject:
         stats = self.get_stats_base()
         # Stats _ Evolution Chain
         evo_chain = self.get_stats_evo()
+        evo_data = self.get_evo_data(evo_chain)
         pokemon = {'version': version,
                    'version_group': version_group,
                    'species_id': species_id,
@@ -39,7 +40,8 @@ class PokemonObject:
                    'abilities': abilities,
                    'damage': damage,
                    'stats': stats,
-                   'evo_chain': evo_chain}
+                   'evo_chain': evo_chain,
+                   'evo_data': evo_data}
         return pokemon
 
     def get_version_group(self, version):
@@ -190,8 +192,8 @@ class PokemonObject:
         evolution_chain_id = evolution_chain_id[0][0]
 
         evolution_chain_pokemons_data = self.fetch_db('id, evolves_from_species_id, is_baby',
-                                        'pokemon_species',
-                                        'evolution_chain_id='+str(evolution_chain_id))
+                                                      'pokemon_species',
+                                                      'evolution_chain_id=' + str(evolution_chain_id))
         # Output: [(25, 172, 0), (26, 25, 0), (172, None, 1)] - Pikachu line unsorted and with baby
         # Nulls need to be zeroed for sorting, a new list will be created to manipulate the tuples
         evolution_chain_pokemons = []
@@ -206,7 +208,7 @@ class PokemonObject:
 
         # Sorts first evo(i.e evolves_from_species field == none)
         evolution_chain_pokemons = sorted(evolution_chain_pokemons, key=itemgetter(1))
-        print(evolution_chain_pokemons)
+        # print(evolution_chain_pokemons)
 
         sorted_evo_chain = defaultdict(list)
 
@@ -222,13 +224,13 @@ class PokemonObject:
         for i in evolution_chain_pokemons:
             if i[1] == 0 and i[2] == 1:
                 baby = i[0]
-            elif i[1] == 0 or i[1] == baby:
+            elif i[1] == 0 or i[1] in sorted_evo_chain['baby']:
                 base = i[0]
             else:
                 for j in evolution_chain_pokemons:
                     if i[1] == j[0] and (j[1] == baby or j[1] == 0):
                         stg_1 = i[0]
-                    elif i[1] == j[0] and j[0] == stg_1:
+                    elif i[1] == j[0] and j[0] in sorted_evo_chain['stg_1']:
                         stg_2 = i[0]
 
             if baby not in baby_key and baby != 0:
@@ -243,7 +245,74 @@ class PokemonObject:
         for key in sorted_evo_chain:
             if sorted_evo_chain[key] == []:
                 sorted_evo_chain[key] = [0]
-
-        print(sorted_evo_chain)
+        # print(sorted_evo_chain)
 
         return sorted_evo_chain
+
+    def get_evo_data(self, evo_chain):
+        def get_evolution_stage_data(species_id):
+            data = self.fetch_db('evolved_species_id,'
+                                 'evolution_trigger_id,'
+                                 'trigger_item_id,'
+                                 'minimum_level,'
+                                 'gender_id,'
+                                 'location_id,'
+                                 'held_item_id,'
+                                 'time_of_day,'
+                                 'known_move_id,'
+                                 'known_move_type_id,'
+                                 'minimum_happiness,'
+                                 'minimum_beauty,'
+                                 'minimum_affection,'
+                                 'relative_physical_stats,'
+                                 'party_species_id,'
+                                 'party_type_id,'
+                                 'trade_species_id,'
+                                 'needs_overworld_rain,'
+                                 'turn_upside_down',
+                                 'pokemon_evolution',
+                                 'evolved_species_id= ' + str(species_id))
+
+            pokedex_number = self.fetch_db('pokedex_number',
+                                           'pokemon_dex_numbers',
+                                           'pokedex_id= ' + str(self.pokedex_id) +
+                                           ' AND species_id= ' + str(species_id))
+
+            if pokedex_number and data:
+                data = pokedex_number[0] + data[0]
+            elif pokedex_number and not data:
+                data = pokedex_number[0]
+            # print(data)
+            return data
+
+        evo_chain_data = defaultdict(list)
+        baby_key = evo_chain_data['baby']
+        base_key = evo_chain_data['base']
+        stg_1_key = evo_chain_data['stg_1']
+        stg_2_key = evo_chain_data['stg_2']
+
+        if evo_chain['baby'][0] != 0:
+            for pokemon_baby in evo_chain['baby']:
+                baby_key.append(get_evolution_stage_data(pokemon_baby))
+
+            for pokemon_base in evo_chain['base']:
+                if pokemon_base != 0:
+                    base_key.append(get_evolution_stage_data(pokemon_base))
+
+        if evo_chain['base'][0] != 0:
+            for pokemon_base in evo_chain['base']:
+                if get_evolution_stage_data(pokemon_base) not in evo_chain_data['base']:
+                    base_key.append(get_evolution_stage_data(pokemon_base))
+                # if len(evo_chain_data['base']) == 0:
+                #     base_key.append(get_evolution_stage_data(pokemon_base))
+            for pokemon_stg_1 in evo_chain['stg_1']:
+                if pokemon_stg_1 != 0:
+                    stg_1_key.append(get_evolution_stage_data(pokemon_stg_1))
+
+        if evo_chain['stg_1'][0] != 0:
+            for pokemon_stg_2 in evo_chain['stg_2']:
+                if pokemon_stg_2 != 0:
+                    stg_2_key.append(get_evolution_stage_data(pokemon_stg_2))
+        # print(evo_chain_data)
+        return evo_chain_data
+
