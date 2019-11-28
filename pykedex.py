@@ -1,6 +1,6 @@
 import sys, sqlite3
 from PyQt5.QtGui import QPixmap, QIcon, QCursor
-from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem, QListView
 from PyQt5.QtCore import Qt, QEvent, QSettings
 from gui import Ui_MainWindow
 from views.view_pokedex import PokedexView
@@ -40,6 +40,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         self.pokemon_display_page = 1
         self.selected_pokemon_row = 0
         self.calculated_ivs = {}
+        self.base_pokemons = []
         # POKEMON VIEW GUI ELEMENTS (EVENT INSTALLERS)
         self.mode_btns = [(1, self.i_pkmn_mode_img_btn),
                           (2, self.i_pkmn_mode_stats_btn),
@@ -106,6 +107,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             ability.installEventFilter(self)
         for evo_chain_sprite in self.evo_sprites:
             evo_chain_sprite.installEventFilter(self)
+        self.d_pkmn_i_2_i_egg_comp_list.setMovement(QListView.Static)
+        self.d_pkmn_i_2_i_egg_comp_list.itemClicked.connect(self.set_breeding_compatible)
 
         #
         # START-UP FUNCTIONS
@@ -151,6 +154,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             self.last_view = 1
             self.create_pokemon_list()
             self.m_pkmn_list.setCurrentRow(self.selected_pokemon_row)
+            self.base_pokemons = self.get_base_pokemons()
         if self.last_view == 2 or mode == 'pokedex':
             index = 1
             self.last_view = 2
@@ -174,22 +178,31 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             self.m_pkmn_list.clear()
         elif db_type == 'generation':
             self.m_pokedex_list.clear()
+        elif db_type == 'egg_group':
+            self.d_pkmn_i_2_i_egg_comp_list.clear()
 
         for item in db:
             entry = QListWidgetItem(item[1])
-            entry.setData(32, item[0])  # Database entry for 'name'
+            entry.setData(32, item[0])
             if db_type == 'pokemon':
                 entry.setData(33, item[2])  # Pokemon Species ID
-                # entry.setTextAlignment(Qt.AlignHCenter)
                 self.m_pkmn_list.addItem(entry)
             elif db_type == 'generation':
                 self.m_pokedex_list.addItem(entry)
+            elif db_type == 'egg_group':
+                self.d_pkmn_i_2_i_egg_comp_list.addItem(entry)
 
         if db_type == 'pokemon':
             # Set list icons
             all_items = self.m_pkmn_list.findItems('*', Qt.MatchWildcard)
             for pokemon in all_items:
                 pixmap = QPixmap(':/pokemon/pokemon/icons/' + str(pokemon.data(33)) + '.png')
+                icon = QIcon(pixmap)
+                pokemon.setIcon(icon)
+        elif db_type == 'egg_group':
+            all_items = self.d_pkmn_i_2_i_egg_comp_list.findItems('*', Qt.MatchWildcard)
+            for pokemon in all_items:
+                pixmap = QPixmap(':/pokemon/pokemon/icons/' + str(pokemon.data(32)[1]) + '.png')
                 icon = QIcon(pixmap)
                 pokemon.setIcon(icon)
 
@@ -299,7 +312,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
 
             def manage_evolution_states(index):
                 if event.type() == QEvent.MouseButtonPress and source == sprite_label:
-                    set_evo_pokemon_list_row(pokemon)
+                    self.set_current_pokemon(pokemon)
                 if event.type() == QEvent.Enter and source == sprite_label:
                     source.setCursor(QCursor(Qt.PointingHandCursor))
                     description = self.set_evolution_description(pokemon)
@@ -321,12 +334,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
                               self.d_pkmn_i_2_i_evo_desc_stage_2]
                     for lbl in labels:
                         lbl.hide()
-
-            def set_evo_pokemon_list_row(pokemon):  # Click Pokemon evo stage to select it by its pokedex #/list row
-                if 0 <= self.pokedex_id <= 7 or 10 <= self.pokedex_id:
-                    self.m_pkmn_list.setCurrentRow(pokemon[0] - 1)
-                elif 8 <= self.pokedex_id <= 9:  # Victini is number 0, this will add an exception for Unova dex
-                    self.m_pkmn_list.setCurrentRow(pokemon[0])
 
             # Manages evolution chain stages, including pokemons with branched evolutions
             for index in range(1, 5):

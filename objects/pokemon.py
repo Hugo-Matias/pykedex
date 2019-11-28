@@ -27,9 +27,11 @@ class PokemonObject:
         damage = self.get_stats_damage_types(types)
         # Stats - Base Stats
         stats = self.get_stats_base()
-        # Stats _ Evolution Chain
+        # Stats - Evolution Chain
         evo_chain = self.get_stats_evo()
         evo_data = self.get_evo_data(evo_chain)
+        # Stats - Breeding
+        breeding = self.get_breeding_data()
         pokemon = {'version': version,
                    'version_group': version_group,
                    'species_id': species_id,
@@ -41,7 +43,9 @@ class PokemonObject:
                    'damage': damage,
                    'stats': stats,
                    'evo_chain': evo_chain,
-                   'evo_data': evo_data}
+                   'evo_data': evo_data,
+                   'breeding': breeding}
+
         return pokemon
 
     def get_version_group(self, version):
@@ -127,7 +131,7 @@ class PokemonObject:
         ability_2 = self.fetch_db_query(fquery.format(pokemon_id=pokemon_id, slot=2, language=language))
         ability_3 = self.fetch_db_query(fquery.format(pokemon_id=pokemon_id, slot=3, language=language))
 
-        # def clean_effect_description(ability):
+        # def clean_effect_description(ability):  # TODO
         #     print(ability[1])
         #     # check = re.findall(r'(\[\w+\])', ability[1])
         #     sub = re.sub(r'\[', '', ability[1])
@@ -303,8 +307,6 @@ class PokemonObject:
             for pokemon_base in evo_chain['base']:
                 if get_evolution_stage_data(pokemon_base) not in evo_chain_data['base']:
                     base_key.append(get_evolution_stage_data(pokemon_base))
-                # if len(evo_chain_data['base']) == 0:
-                #     base_key.append(get_evolution_stage_data(pokemon_base))
             for pokemon_stg_1 in evo_chain['stg_1']:
                 if pokemon_stg_1 != 0:
                     stg_1_key.append(get_evolution_stage_data(pokemon_stg_1))
@@ -316,3 +318,80 @@ class PokemonObject:
         # print(evo_chain_data)
         return evo_chain_data
 
+    def get_breeding_data(self):
+        breeding_data = self.fetch_db('gender_rate, hatch_counter', 'pokemon_species',
+                                      'id = ' + str(self.item.data(33)))
+        query = 'SELECT egg_group_prose.egg_group_id, name FROM egg_group_prose INNER JOIN pokemon_egg_groups ' \
+                'ON pokemon_egg_groups.egg_group_id = egg_group_prose.egg_group_id ' \
+                'WHERE pokemon_egg_groups.species_id = ' + str(self.item.data(33)) + \
+                ' AND egg_group_prose.local_language_id= '
+
+        egg_groups = self.fetch_db_query(query + str(self.local_language_id))
+        if not egg_groups:
+            egg_groups = self.fetch_db_query(query + str(self.local_language_id_en))
+
+        breeding_data = [breeding_data[0],
+                         tuple([group_id[0] for group_id in egg_groups]),
+                         tuple([group_name[1] for group_name in egg_groups])]
+
+        compatible_pokemons = []
+        if breeding_data[1][0] != 15:  # Checks if sel. pokemon doesn't belong to Undiscovered egg group (i.e No-Eggs)
+            if breeding_data[0][0] != -1:  # Checks if sel. pokemon is not genderless
+                for pokemon in self.base_pokemons:
+                    # Filters single gender pokemon from reproducing with same gender (ex. Nidoran F. w/ Kangaskhan)
+                    # Genderless and Undiscovered egg group are also filtered out
+                    if pokemon[3] != -1 and \
+                            pokemon[2][0] != 15 and \
+                            breeding_data[0][0] + pokemon[3] != 16 and \
+                            breeding_data[0][0] + pokemon[3] != 0:
+
+                        for i in range(len(breeding_data[1])):
+                            if breeding_data[1][i] in pokemon[2] and pokemon not in compatible_pokemons:
+                                compatible_pokemons.append(pokemon)
+
+                            # Adds Ditto to the compatible list (13 is it's own egg group)
+                            if pokemon[2][0] == 13 and pokemon not in compatible_pokemons:
+                                compatible_pokemons.append(pokemon)
+            else:
+                compatible_pokemons = [((132, 132), '', (13,), -1)]  # Ditto data for genderless pokemon
+
+        if self.item.data(33) == 132:  # Creates Ditto compatibles list, every pkmn except Undiscovered/Ditto egg groups
+            for pokemon in self.base_pokemons:
+                if pokemon[2][0] != 15 and pokemon[2][0] != 13:
+                    compatible_pokemons.append(pokemon)
+
+        self.populate_list(compatible_pokemons, 'egg_group')
+        return breeding_data
+
+    def get_base_pokemons(self):
+        initial_base_list = [pokemon[0] for pokemon in
+                             self.fetch_db('id', 'pokemon_species', 'evolves_from_species_id IS NULL AND is_baby= 0')]
+
+        baby_pokemons = [baby[0] for baby in self.fetch_db('id', 'pokemon_species', 'is_baby= 1')]
+        base_from_baby = []
+        for baby in baby_pokemons:
+            p = self.fetch_db('id', 'pokemon_species', 'evolves_from_species_id= ' + str(baby))
+            for pkmn in p:
+                base_from_baby.append(pkmn)
+
+        base_pokemons = sorted(initial_base_list + [pokemon[0] for pokemon in base_from_baby])
+
+        base_pokemon_dex_numbers = []
+        for pk in base_pokemons:
+            if self.pokedex_id > 0:
+                p = self.fetch_db('pokedex_number, species_id',  # Order matters for set_current_pokemon function
+                                  'pokemon_dex_numbers',
+                                  'pokedex_id= ' + str(self.pokedex_id) + ' AND species_id = ' + str(pk))
+            else:
+                p = (pk, pk)
+            if p:
+                base_pokemon_dex_numbers.append(p[0])
+
+        base_pokemon_groups = []
+        for pokemon in base_pokemon_dex_numbers:
+            base_egg_groups = self.fetch_db('egg_group_id', 'pokemon_egg_groups', 'species_id=' + str(pokemon[1]))
+            gender_rate = self.fetch_db('gender_rate', 'pokemon_species', 'id=' + str(pokemon[1]))
+            base_pokemon_groups.append((pokemon,  '',
+                                        tuple([group_id[0] for group_id in base_egg_groups]),
+                                        gender_rate[0][0]))
+        return base_pokemon_groups

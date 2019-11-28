@@ -19,17 +19,33 @@ class Ui_MainWindow(object):
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/img/icon.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
-        MainWindow.setStyleSheet("QListWidget {outline: 0}\n"
-"                        QListWidget:item:selected, QListWidget:item:hover:selected {background: rgba(255, 0, 0, 200);\n"
-"                                border-radius: 7px;}\n"
-"                        QListWidget:item:hover {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,\n"
-"                                                stop:0 rgba(255, 0, 0, 130), stop:0.8 rgba(151, 0, 0, 0));\n"
-"                                border-radius:7px; color: white}")
+        MainWindow.setStyleSheet("QScrollBar:vertical {background: none;\n"
+"                    width: 7px;\n"
+"                    margin: 0px 0px 0px 0px;}\n"
+"QScrollBar:handle:vertical {border-image: url(:/img/handle.jpg) 0 stretch stretch;\n"
+"                            min-height: 50px;\n"
+"                            height: 50px;}\n"
+"QScrollBar:add-line:vertical {background: rgb(230, 30, 30);\n"
+"                                border: 2px rgb(44, 44, 44);\n"
+"                                height: 15px;\n"
+"                                subcontrol-position: bottom;\n"
+"                                subcontrol-origin: margin;}\n"
+"QScrollBar:sub-line:vertical {background: rgb(230, 30, 30);\n"
+"                                border: 2px rgb(44, 44, 44);\n"
+"                                height: 15px;\n"
+"                                subcontrol-position: top;\n"
+"                                subcontrol-origin: margin;}\n"
+"QScrollBar:up-arrow:vertical, QScrollBar:down-arrow:vertical {border: 2px solid grey;\n"
+"                                                                width: 3px;\n"
+"                                                                height: 3px;\n"
+"                                                                background: none;}\n"
+"QScrollBar:add-page:vertical, QScrollBar:sub-page:vertical {background: rgb(240, 240, 240);}")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.displayWidget = QtWidgets.QStackedWidget(self.centralwidget)
         self.displayWidget.setEnabled(True)
         self.displayWidget.setGeometry(QtCore.QRect(410, 140, 640, 350))
+        self.displayWidget.setStyleSheet("")
         self.displayWidget.setObjectName("displayWidget")
         self.d_pkmn = QtWidgets.QWidget()
         self.d_pkmn.setStyleSheet("")
@@ -54,7 +70,8 @@ class Ui_MainWindow(object):
         self.d_pkmn_i_2.setStyleSheet("#d_pkmn_i_2{background-image: url(:/bg/bgs/pkmn/display_stats.png);}\n"
 "QPushButton{color:white;}\n"
 "QPushButton:pressed{color:rgb(44, 44, 44);}\n"
-"QPushButton:flat{border:none;}")
+"QPushButton:flat{border:none;}\n"
+"")
         self.d_pkmn_i_2.setObjectName("d_pkmn_i_2")
         self.d_pkmn_i_2_sprite_f = QtWidgets.QLabel(self.d_pkmn_i_2)
         self.d_pkmn_i_2_sprite_f.setGeometry(QtCore.QRect(41, 29, 100, 100))
@@ -147,6 +164,7 @@ class Ui_MainWindow(object):
         self.d_pkmn_i_2_caught.setObjectName("d_pkmn_i_2_caught")
         self.d_pkmn_i_2_info = QtWidgets.QStackedWidget(self.d_pkmn_i_2)
         self.d_pkmn_i_2_info.setGeometry(QtCore.QRect(0, 147, 640, 200))
+        self.d_pkmn_i_2_info.setStyleSheet("")
         self.d_pkmn_i_2_info.setObjectName("d_pkmn_i_2_info")
         self.d_pkmn_i_2_i_dmg = QtWidgets.QWidget()
         self.d_pkmn_i_2_i_dmg.setStyleSheet("#d_pkmn_i_2_i_dmg{background-image: url(:/bg/bgs/pkmn/d_pkmn_i_2_i_dmg.png);}")
@@ -1220,6 +1238,215 @@ class Ui_MainWindow(object):
         self.d_pkmn_i_2_i_evo_sprite_2_2_2.setAlignment(QtCore.Qt.AlignCenter)
         self.d_pkmn_i_2_i_evo_sprite_2_2_2.setObjectName("d_pkmn_i_2_i_evo_sprite_2_2_2")
         self.d_pkmn_i_2_info.addWidget(self.d_pkmn_i_2_i_evo)
+        self.d_pkmn_i_2_i_egg = QtWidgets.QWidget()
+        self.d_pkmn_i_2_i_egg.setStyleSheet("#d_pkmn_i_2_i_egg{background-image: url(:/bg/bgs/pkmn/d_pkmn_i_2_i_egg.png);}\n"
+"")
+        self.d_pkmn_i_2_i_egg.setObjectName("d_pkmn_i_2_i_egg")
+        self.d_pkmn_i_2_i_egg_comp_label = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_comp_label.setGeometry(QtCore.QRect(234, 155, 168, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_comp_label.setFont(font)
+        self.d_pkmn_i_2_i_egg_comp_label.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_comp_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.d_pkmn_i_2_i_egg_comp_label.setObjectName("d_pkmn_i_2_i_egg_comp_label")
+        self.d_pkmn_i_2_i_egg_hcount_label = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_hcount_label.setGeometry(QtCore.QRect(431, 155, 168, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_hcount_label.setFont(font)
+        self.d_pkmn_i_2_i_egg_hcount_label.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_hcount_label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_hcount_label.setObjectName("d_pkmn_i_2_i_egg_hcount_label")
+        self.d_pkmn_i_2_i_egg_gender_label = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_gender_label.setGeometry(QtCore.QRect(476, 92, 122, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_gender_label.setFont(font)
+        self.d_pkmn_i_2_i_egg_gender_label.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_gender_label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_gender_label.setObjectName("d_pkmn_i_2_i_egg_gender_label")
+        self.d_pkmn_i_2_i_egg_group_label = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_group_label.setGeometry(QtCore.QRect(-14, 73, 155, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_group_label.setFont(font)
+        self.d_pkmn_i_2_i_egg_group_label.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_group_label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_group_label.setObjectName("d_pkmn_i_2_i_egg_group_label")
+        self.d_pkmn_i_2_i_egg_sth_label = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_sth_label.setGeometry(QtCore.QRect(-5, 155, 146, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_sth_label.setFont(font)
+        self.d_pkmn_i_2_i_egg_sth_label.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_sth_label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_sth_label.setObjectName("d_pkmn_i_2_i_egg_sth_label")
+        self.d_pkmn_i_2_i_egg_group_1 = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_group_1.setGeometry(QtCore.QRect(-26, 39, 172, 31))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(16)
+        font.setBold(True)
+        font.setWeight(75)
+        self.d_pkmn_i_2_i_egg_group_1.setFont(font)
+        self.d_pkmn_i_2_i_egg_group_1.setStyleSheet("color: rgb(75, 75, 75);")
+        self.d_pkmn_i_2_i_egg_group_1.setText("")
+        self.d_pkmn_i_2_i_egg_group_1.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_group_1.setObjectName("d_pkmn_i_2_i_egg_group_1")
+        self.d_pkmn_i_2_i_egg_group_2 = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_group_2.setGeometry(QtCore.QRect(-26, 7, 172, 31))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(16)
+        font.setBold(True)
+        font.setWeight(75)
+        self.d_pkmn_i_2_i_egg_group_2.setFont(font)
+        self.d_pkmn_i_2_i_egg_group_2.setStyleSheet("color: rgb(75, 75, 75);")
+        self.d_pkmn_i_2_i_egg_group_2.setText("")
+        self.d_pkmn_i_2_i_egg_group_2.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_group_2.setObjectName("d_pkmn_i_2_i_egg_group_2")
+        self.d_pkmn_i_2_i_egg_hcount = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_hcount.setGeometry(QtCore.QRect(490, 124, 110, 31))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(18)
+        font.setBold(True)
+        font.setWeight(75)
+        self.d_pkmn_i_2_i_egg_hcount.setFont(font)
+        self.d_pkmn_i_2_i_egg_hcount.setStyleSheet("color: rgb(75, 75, 75);")
+        self.d_pkmn_i_2_i_egg_hcount.setText("")
+        self.d_pkmn_i_2_i_egg_hcount.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_hcount.setObjectName("d_pkmn_i_2_i_egg_hcount")
+        self.d_pkmn_i_2_i_egg_sth = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_sth.setGeometry(QtCore.QRect(-3, 123, 146, 31))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(16)
+        font.setBold(True)
+        font.setWeight(75)
+        self.d_pkmn_i_2_i_egg_sth.setFont(font)
+        self.d_pkmn_i_2_i_egg_sth.setStyleSheet("color: rgb(75, 75, 75);")
+        self.d_pkmn_i_2_i_egg_sth.setText("")
+        self.d_pkmn_i_2_i_egg_sth.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_sth.setObjectName("d_pkmn_i_2_i_egg_sth")
+        self.d_pkmn_i_2_i_egg_gender_2_8 = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_gender_2_8.setGeometry(QtCore.QRect(573, 73, 26, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_gender_2_8.setFont(font)
+        self.d_pkmn_i_2_i_egg_gender_2_8.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_gender_2_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_gender_2_8.setObjectName("d_pkmn_i_2_i_egg_gender_2_8")
+        self.d_pkmn_i_2_i_egg_gender_1_8 = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_gender_1_8.setGeometry(QtCore.QRect(517, 73, 26, 20))
+        font = QtGui.QFont()
+        font.setFamily("Montserrat Light")
+        font.setPointSize(11)
+        self.d_pkmn_i_2_i_egg_gender_1_8.setFont(font)
+        self.d_pkmn_i_2_i_egg_gender_1_8.setStyleSheet("color: rgb(152, 152, 152);")
+        self.d_pkmn_i_2_i_egg_gender_1_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_gender_1_8.setObjectName("d_pkmn_i_2_i_egg_gender_1_8")
+        self.d_pkmn_i_2_i_egg_gender_2 = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_gender_2.setGeometry(QtCore.QRect(548, 67, 32, 31))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(18)
+        font.setBold(True)
+        font.setWeight(75)
+        self.d_pkmn_i_2_i_egg_gender_2.setFont(font)
+        self.d_pkmn_i_2_i_egg_gender_2.setStyleSheet("color: rgb(75, 75, 75);")
+        self.d_pkmn_i_2_i_egg_gender_2.setText("")
+        self.d_pkmn_i_2_i_egg_gender_2.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_gender_2.setObjectName("d_pkmn_i_2_i_egg_gender_2")
+        self.d_pkmn_i_2_i_egg_gender_1 = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_gender_1.setGeometry(QtCore.QRect(494, 67, 32, 31))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(18)
+        font.setBold(True)
+        font.setWeight(75)
+        self.d_pkmn_i_2_i_egg_gender_1.setFont(font)
+        self.d_pkmn_i_2_i_egg_gender_1.setStyleSheet("color: rgb(75, 75, 75);")
+        self.d_pkmn_i_2_i_egg_gender_1.setText("")
+        self.d_pkmn_i_2_i_egg_gender_1.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.d_pkmn_i_2_i_egg_gender_1.setObjectName("d_pkmn_i_2_i_egg_gender_1")
+        self.d_pkmn_i_2_i_egg_gender = QtWidgets.QLabel(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_gender.setGeometry(QtCore.QRect(512, 15, 86, 45))
+        self.d_pkmn_i_2_i_egg_gender.setText("")
+        self.d_pkmn_i_2_i_egg_gender.setObjectName("d_pkmn_i_2_i_egg_gender")
+        self.d_pkmn_i_2_i_egg_comp_list = QtWidgets.QListWidget(self.d_pkmn_i_2_i_egg)
+        self.d_pkmn_i_2_i_egg_comp_list.setGeometry(QtCore.QRect(180, 21, 279, 112))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(1)
+        font.setBold(False)
+        font.setItalic(False)
+        font.setWeight(50)
+        self.d_pkmn_i_2_i_egg_comp_list.setFont(font)
+        self.d_pkmn_i_2_i_egg_comp_list.viewport().setProperty("cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.d_pkmn_i_2_i_egg_comp_list.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.d_pkmn_i_2_i_egg_comp_list.setStyleSheet("#d_pkmn_i_2_i_egg_comp_list {outline: 0}\n"
+"\n"
+"#d_pkmn_i_2_i_egg_comp_list:item:selected, #d_pkmn_i_2_i_egg_comp_list:item:hover:selected {\n"
+"background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(255, 255, 255, 255), stop:0.1 rgba(255, 255, 255, 255), stop:0.2 rgba(255, 176, 176, 167), stop:0.3 rgba(255, 151, 151, 92), stop:0.4 rgba(255, 125, 125, 51), stop:0.5 rgba(255, 76, 76, 205), stop:0.52 rgba(255, 76, 76, 205), stop:0.6 rgba(255, 180, 180, 84), stop:1 rgba(255, 255, 255, 0));\n"
+"border-radius: 7px;}\n"
+"\n"
+"#d_pkmn_i_2_i_egg_comp_list:item:hover {\n"
+"background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(255, 235, 235, 206), stop:0.35 rgba(255, 188, 188, 80), stop:0.4 rgba(255, 162, 162, 80), stop:0.425 rgba(255, 132, 132, 156), stop:0.44 rgba(252, 128, 128, 80), stop:1 rgba(255, 255, 255, 0));\n"
+"border-radius:7px}\n"
+"\n"
+"QScrollBar:vertical {background: none;\n"
+"                    width: 7px;\n"
+"                    margin: 0px 0px 0px 0px;}\n"
+"QScrollBar:handle:vertical {border-image: url(:/img/handle.jpg) 0 stretch stretch;\n"
+"                            min-height: 50px;\n"
+"                            height: 50px;}\n"
+"QScrollBar:add-line:vertical {background: rgb(230, 30, 30);\n"
+"                                border: 2px rgb(44, 44, 44);\n"
+"                                height: 15px;\n"
+"                                subcontrol-position: bottom;\n"
+"                                subcontrol-origin: margin;}\n"
+"QScrollBar:sub-line:vertical {background: rgb(230, 30, 30);\n"
+"                                border: 2px rgb(44, 44, 44);\n"
+"                                height: 15px;\n"
+"                                subcontrol-position: top;\n"
+"                                subcontrol-origin: margin;}\n"
+"QScrollBar:up-arrow:vertical, QScrollBar:down-arrow:vertical {border: 2px solid grey;\n"
+"                                                                width: 3px;\n"
+"                                                                height: 3px;\n"
+"                                                                background: none;}\n"
+"QScrollBar:add-page:vertical, QScrollBar:sub-page:vertical {background: rgb(240, 240, 240);}")
+        self.d_pkmn_i_2_i_egg_comp_list.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.d_pkmn_i_2_i_egg_comp_list.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.d_pkmn_i_2_i_egg_comp_list.setLineWidth(0)
+        self.d_pkmn_i_2_i_egg_comp_list.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.d_pkmn_i_2_i_egg_comp_list.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.d_pkmn_i_2_i_egg_comp_list.setAutoScroll(False)
+        self.d_pkmn_i_2_i_egg_comp_list.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.d_pkmn_i_2_i_egg_comp_list.setProperty("showDropIndicator", False)
+        self.d_pkmn_i_2_i_egg_comp_list.setDragDropOverwriteMode(True)
+        self.d_pkmn_i_2_i_egg_comp_list.setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
+        self.d_pkmn_i_2_i_egg_comp_list.setDefaultDropAction(QtCore.Qt.IgnoreAction)
+        self.d_pkmn_i_2_i_egg_comp_list.setIconSize(QtCore.QSize(100, 100))
+        self.d_pkmn_i_2_i_egg_comp_list.setFlow(QtWidgets.QListView.LeftToRight)
+        self.d_pkmn_i_2_i_egg_comp_list.setProperty("isWrapping", True)
+        self.d_pkmn_i_2_i_egg_comp_list.setResizeMode(QtWidgets.QListView.Adjust)
+        self.d_pkmn_i_2_i_egg_comp_list.setLayoutMode(QtWidgets.QListView.SinglePass)
+        self.d_pkmn_i_2_i_egg_comp_list.setViewMode(QtWidgets.QListView.IconMode)
+        self.d_pkmn_i_2_i_egg_comp_list.setModelColumn(0)
+        self.d_pkmn_i_2_i_egg_comp_list.setUniformItemSizes(False)
+        self.d_pkmn_i_2_i_egg_comp_list.setBatchSize(10)
+        self.d_pkmn_i_2_i_egg_comp_list.setWordWrap(False)
+        self.d_pkmn_i_2_i_egg_comp_list.setItemAlignment(QtCore.Qt.AlignCenter)
+        self.d_pkmn_i_2_i_egg_comp_list.setObjectName("d_pkmn_i_2_i_egg_comp_list")
+        self.d_pkmn_i_2_info.addWidget(self.d_pkmn_i_2_i_egg)
         self.d_pkmn_i.addWidget(self.d_pkmn_i_2)
         self.displayWidget.addWidget(self.d_pkmn)
         self.d_pokedex = QtWidgets.QWidget()
@@ -1624,6 +1851,12 @@ class Ui_MainWindow(object):
         self.infoWidget.addWidget(self.i_item)
         self.menuWidget = QtWidgets.QStackedWidget(self.centralwidget)
         self.menuWidget.setGeometry(QtCore.QRect(0, 0, 410, 490))
+        self.menuWidget.setStyleSheet("QListWidget {outline: 0}\n"
+"                        QListWidget:item:selected, QListWidget:item:hover:selected {background: rgba(255, 0, 0, 200);\n"
+"                                border-radius: 7px;}\n"
+"                        QListWidget:item:hover {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,\n"
+"                                                stop:0 rgba(255, 0, 0, 130), stop:0.8 rgba(151, 0, 0, 0));\n"
+"                                border-radius:7px; color: white}")
         self.menuWidget.setObjectName("menuWidget")
         self.m_pkmn = QtWidgets.QWidget()
         self.m_pkmn.setStyleSheet("#m_pkmn{background-image: url(:/bg/bgs/pkmn/menu.png);}\n"
@@ -1833,7 +2066,8 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.displayWidget.setCurrentIndex(0)
-        self.d_pkmn_i_2_info.setCurrentIndex(2)
+        self.d_pkmn_i_2_info.setCurrentIndex(3)
+        self.d_pkmn_i_2_i_egg_comp_list.setCurrentRow(-1)
         self.infoWidget.setCurrentIndex(0)
         self.menuWidget.setCurrentIndex(0)
         self.m_pkmn_list.setCurrentRow(-1)
@@ -1867,6 +2101,13 @@ class Ui_MainWindow(object):
         self.d_pkmn_i_2_i_evo_label_base.setText(_translate("MainWindow", "Base"))
         self.d_pkmn_i_2_i_evo_label_stage_1.setText(_translate("MainWindow", "Stage 1"))
         self.d_pkmn_i_2_i_evo_label_stage_2.setText(_translate("MainWindow", "Stage 2"))
+        self.d_pkmn_i_2_i_egg_comp_label.setText(_translate("MainWindow", "Compatibility"))
+        self.d_pkmn_i_2_i_egg_hcount_label.setText(_translate("MainWindow", "Hatch Counter"))
+        self.d_pkmn_i_2_i_egg_gender_label.setText(_translate("MainWindow", "Gender"))
+        self.d_pkmn_i_2_i_egg_group_label.setText(_translate("MainWindow", "Egg Groups"))
+        self.d_pkmn_i_2_i_egg_sth_label.setText(_translate("MainWindow", "Steps to Hatch"))
+        self.d_pkmn_i_2_i_egg_gender_2_8.setText(_translate("MainWindow", "/8"))
+        self.d_pkmn_i_2_i_egg_gender_1_8.setText(_translate("MainWindow", "/8"))
         self.credits.setText(_translate("MainWindow", "HJLM"))
         self.i_pkmn_by_name.setText(_translate("MainWindow", "by Name"))
         self.i_pkmn_by_type.setText(_translate("MainWindow", "by Type"))

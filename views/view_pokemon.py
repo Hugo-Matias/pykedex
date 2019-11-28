@@ -1,6 +1,7 @@
 import re
 from PyQt5.QtGui import QPixmap, QFontMetrics
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QListWidgetItem
 from objects import pokemon, writer
 
 
@@ -24,13 +25,24 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
             str(self.game_selected) + ".png);}"
                                       "#m_pkmn_game_btn:flat {border: none;}")
 
-    def set_current_pokemon(self, item):
-        try:
-            self.item = item
+    def set_current_pokemon(self, pokemon):
+        if type(pokemon) == QListWidgetItem:
+            self.item = pokemon
             self.set_pkmn()
             self.selected_pokemon_row = self.m_pkmn_list.currentRow()
-        except AttributeError:
-            pass
+        elif pokemon:
+            if 0 <= self.pokedex_id <= 7 or 10 <= self.pokedex_id:
+                try:
+                    self.m_pkmn_list.setCurrentRow(pokemon[0] - 1)
+                except TypeError:
+                    pass
+            elif 8 <= self.pokedex_id <= 9:  # Victini is number 0, this will add an exception for Unova dex
+                try:
+                    self.m_pkmn_list.setCurrentRow(pokemon[0])
+                except TypeError:
+                    pass
+        else:
+            print('Error setting pokemon. Check function set_current_pokemon')
 
     def set_pokemon_display_page(self):
         # Check buttons Img|Stats|Moves|Loc
@@ -75,127 +87,19 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
             self.i_pkmn_label_type2.setText(None)
         self.set_imgs()
 
-        #
-        # Stats Page
-        #
         if self.pokemon_display_page == 2:
-            # HEADER - Sprites and Description
-            self.set_sprites()
-            # Set description and resize font if necessary, default 12 points
-            f = self.d_pkmn_i_2_desc.font()
-            f.setPointSize(12)
-            self.d_pkmn_i_2_desc.setText(self.pokemon['flavor'])
-            width = self.d_pkmn_i_2_desc.fontMetrics().boundingRect(self.d_pkmn_i_2_desc.text()).width()
-            text_size_factor = 276 / width + 0.45
-            if text_size_factor <= 1:
-                f.setPointSizeF(f.pointSizeF() * text_size_factor)
-            self.d_pkmn_i_2_desc.setFont(f)
+            self.set_stats_page()
 
-            # DAMAGE
-            self.d_pkmn_i_2_i_d_ability_1.setText(self.pokemon['abilities'][0][0])
-            if self.pokemon['abilities'][1]:
-                self.d_pkmn_i_2_i_d_ability_2.setText(self.pokemon['abilities'][1][0])
-            else:
-                self.d_pkmn_i_2_i_d_ability_2.clear()
-            if self.pokemon['abilities'][2]:
-                self.d_pkmn_i_2_i_d_hidden_ability.setText(self.pokemon['abilities'][2][0])
-            else:
-                self.d_pkmn_i_2_i_d_hidden_ability.clear()
+    def set_stats_page(self):
+        self.set_stats_basic()
 
-            def set_damage_values_color(label, value):
-                if value == '4':
-                    label.setStyleSheet('color: rgb(228, 49, 49);')
-                elif value == '2':
-                    label.setStyleSheet('color: rgb(247, 130, 35);')
-                elif value == '1':
-                    label.setStyleSheet('color: rgb(225, 225, 225);')
-                elif value == '\u00BD':
-                    label.setStyleSheet('color: rgb(156, 210, 27);')
-                elif value == '\u00BC':
-                    label.setStyleSheet('color: rgb(58, 199, 229);')
-                elif value == '0':
-                    label.setStyleSheet('color: rgb(26, 83, 211);')
+        self.set_stats_damage()
 
-            for i in range(1, 19):
-                for key in self.pokemon['damage']:
-                    if i == key:
-                        damage_type = eval('self.d_pkmn_i_2_i_d_' + str(i))
-                        value = str(self.pokemon['damage'][key])
-                        damage_type.setText(value + 'x')
-                        set_damage_values_color(damage_type, value)
+        self.set_stats_base_stats()
 
-            # BASE STATS
+        self.set_evolution_chain()
 
-            def change_bar_color(bar, value, stat):
-                red = "css/progress_bar/red.css"
-                orange = "css/progress_bar/orange.css"
-                yellow = "css/progress_bar/yellow.css"
-                green = "css/progress_bar/green.css"
-                cyan = "css/progress_bar/cyan.css"
-                if stat <= 6:
-                    if value <= 51:
-                        stylesheet = red
-                    elif 51 < value <= 102:
-                        stylesheet = orange
-                    elif 102 < value <= 153:
-                        stylesheet = yellow
-                    elif 153 < value <= 204:
-                        stylesheet = green
-                    elif 204 < value <= 255:
-                        stylesheet = cyan
-                else:  # Total Bar
-                    if value <= 255:
-                        stylesheet = red
-                    elif 255 < value <= 510:
-                        stylesheet = orange
-                    elif 510 < value <= 765:
-                        stylesheet = yellow
-                    elif 765 < value <= 1020:
-                        stylesheet = green
-                    elif 1020 < value <= 1275:
-                        stylesheet = cyan
-                with open(stylesheet, "r") as css:
-                    bar.setStyleSheet(css.read())
-
-            for i in range(1, 8):
-                for tuple in self.pokemon['stats']:
-                    base_stat = eval('self.d_pkmn_i_2_i_s_' + str(i))
-                    stat_bar = eval('self.d_pkmn_i_2_i_s_bar_' + str(i))
-                    if i == tuple[0]:
-                        base_stat.setText(str(tuple[1]))
-                        change_bar_color(stat_bar, tuple[1], i)
-                        stat_bar.setValue(tuple[1])
-            self.calc_ivs()
-
-            # EVOLUTION CHAIN
-
-            # Resets evolution item icons
-            for i in range(1, 4):
-                eval('self.d_pkmn_i_2_i_evo_item_' + str(i) + '.hide()')
-            self.d_pkmn_i_2_i_evo_item_2_2.hide()
-            self.d_pkmn_i_2_i_evo_item_3_2.hide()
-
-            def send_pokemon_to_get_item_icon(pokemon, phase, branched=False):
-                if len(pokemon) > 1:
-                    if pokemon[3]:
-                        self.set_item_icons(pokemon[3], phase, branched)
-                    elif pokemon[7]:
-                        self.set_item_icons(pokemon[7], phase, branched)
-
-            if self.pokemon['evo_data']['baby']:
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['baby'][0], 1)
-            if self.pokemon['evo_data']['base']:
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['base'][0], 2)
-            if len(self.pokemon['evo_data']['stg_1']) == 1:
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][0], 3)
-            elif len(self.pokemon['evo_data']['stg_1']) == 2:
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][0], 3)
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][1], 3, branched=True)
-            if len(self.pokemon['evo_data']['stg_2']) == 1:
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][0], 4)
-            elif len(self.pokemon['evo_data']['stg_2']) == 2:
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][0], 4)
-                send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][1], 4, branched=True)
+        self.set_breeding()
 
     def set_item_icons(self, item_id, phase, branched=False):
         pixmap = QPixmap(':/item/item/' + str(item_id) + '.png')
@@ -395,6 +299,94 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                     for evo_sprite_4_2 in (1, 2):
                         eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(evo_sprite_4_2)).hide()
 
+    def set_stats_basic(self):
+        # HEADER - Sprites and Description
+        self.set_sprites()
+        # Set description and resize font if necessary, default 12 points
+        f = self.d_pkmn_i_2_desc.font()
+        f.setPointSize(12)
+        self.d_pkmn_i_2_desc.setText(self.pokemon['flavor'])
+        width = self.d_pkmn_i_2_desc.fontMetrics().boundingRect(self.d_pkmn_i_2_desc.text()).width()
+        text_size_factor = 276 / width + 0.45
+        if text_size_factor <= 1:
+            f.setPointSizeF(f.pointSizeF() * text_size_factor)
+        self.d_pkmn_i_2_desc.setFont(f)
+
+    def set_stats_damage(self):
+        self.d_pkmn_i_2_i_d_ability_1.setText(self.pokemon['abilities'][0][0])
+        if self.pokemon['abilities'][1]:
+            self.d_pkmn_i_2_i_d_ability_2.setText(self.pokemon['abilities'][1][0])
+        else:
+            self.d_pkmn_i_2_i_d_ability_2.clear()
+        if self.pokemon['abilities'][2]:
+            self.d_pkmn_i_2_i_d_hidden_ability.setText(self.pokemon['abilities'][2][0])
+        else:
+            self.d_pkmn_i_2_i_d_hidden_ability.clear()
+
+        def set_damage_values_color(label, value):
+            if value == '4':
+                label.setStyleSheet('color: rgb(228, 49, 49);')
+            elif value == '2':
+                label.setStyleSheet('color: rgb(247, 130, 35);')
+            elif value == '1':
+                label.setStyleSheet('color: rgb(225, 225, 225);')
+            elif value == '\u00BD':
+                label.setStyleSheet('color: rgb(156, 210, 27);')
+            elif value == '\u00BC':
+                label.setStyleSheet('color: rgb(58, 199, 229);')
+            elif value == '0':
+                label.setStyleSheet('color: rgb(26, 83, 211);')
+
+        for i in range(1, 19):
+            for key in self.pokemon['damage']:
+                if i == key:
+                    damage_type = eval('self.d_pkmn_i_2_i_d_' + str(i))
+                    value = str(self.pokemon['damage'][key])
+                    damage_type.setText(value + 'x')
+                    set_damage_values_color(damage_type, value)
+
+    def set_stats_base_stats(self):
+        def change_bar_color(bar, value, stat):
+            red = "css/progress_bar/red.css"
+            orange = "css/progress_bar/orange.css"
+            yellow = "css/progress_bar/yellow.css"
+            green = "css/progress_bar/green.css"
+            cyan = "css/progress_bar/cyan.css"
+            if stat <= 6:
+                if value <= 51:
+                    stylesheet = red
+                elif 51 < value <= 102:
+                    stylesheet = orange
+                elif 102 < value <= 153:
+                    stylesheet = yellow
+                elif 153 < value <= 204:
+                    stylesheet = green
+                elif 204 < value <= 255:
+                    stylesheet = cyan
+            else:  # Total Bar
+                if value <= 255:
+                    stylesheet = red
+                elif 255 < value <= 510:
+                    stylesheet = orange
+                elif 510 < value <= 765:
+                    stylesheet = yellow
+                elif 765 < value <= 1020:
+                    stylesheet = green
+                elif 1020 < value <= 1275:
+                    stylesheet = cyan
+            with open(stylesheet, "r") as css:
+                bar.setStyleSheet(css.read())
+
+        for i in range(1, 8):
+            for tuple in self.pokemon['stats']:
+                base_stat = eval('self.d_pkmn_i_2_i_s_' + str(i))
+                stat_bar = eval('self.d_pkmn_i_2_i_s_bar_' + str(i))
+                if i == tuple[0]:
+                    base_stat.setText(str(tuple[1]))
+                    change_bar_color(stat_bar, tuple[1], i)
+                    stat_bar.setValue(tuple[1])
+        self.calc_ivs()
+
     def set_calculated_ivs(self):
         min_value_label = 'self.d_pkmn_i_2_i_iv_l_'
         max_value_label = 'self.d_pkmn_i_2_i_iv_h_'
@@ -408,9 +400,97 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
             max_val = ivs['max'][i - 1]
             label_max.setText(str(max_val))
 
+    def set_evolution_chain(self):
+        # Resets evolution item icons
+        for i in range(1, 4):
+            eval('self.d_pkmn_i_2_i_evo_item_' + str(i) + '.hide()')
+        self.d_pkmn_i_2_i_evo_item_2_2.hide()
+        self.d_pkmn_i_2_i_evo_item_3_2.hide()
+
+        def send_pokemon_to_get_item_icon(pokemon, phase, branched=False):
+            if len(pokemon) > 1:
+                if pokemon[3]:
+                    self.set_item_icons(pokemon[3], phase, branched)
+                elif pokemon[7]:
+                    self.set_item_icons(pokemon[7], phase, branched)
+
+        if self.pokemon['evo_data']['baby']:
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['baby'][0], 1)
+        if self.pokemon['evo_data']['base']:
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['base'][0], 2)
+        if len(self.pokemon['evo_data']['stg_1']) == 1:
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][0], 3)
+        elif len(self.pokemon['evo_data']['stg_1']) == 2:
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][0], 3)
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_1'][1], 3, branched=True)
+        if len(self.pokemon['evo_data']['stg_2']) == 1:
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][0], 4)
+        elif len(self.pokemon['evo_data']['stg_2']) == 2:
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][0], 4)
+            send_pokemon_to_get_item_icon(self.pokemon['evo_data']['stg_2'][1], 4, branched=True)
+
     def set_evolution_description(self, pokemon):
-        description = self.write_evolution_description(pokemon)
-        return description
+        if type(pokemon) != list:
+            description = self.write_evolution_description(pokemon)
+            return description
+
+    def set_breeding(self):
+        breeding = self.pokemon['breeding']
+        # Sets gender related info
+        pixmap = QPixmap(':/pokemon/pokemon/gender/' + str(breeding[0][0]) + '.png')
+        self.d_pkmn_i_2_i_egg_gender.setPixmap(pixmap)
+        if breeding[0][0] == -1:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('')
+        elif breeding[0][0] == 0:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('8')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('0')
+        elif breeding[0][0] == 1:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('7')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('1')
+        elif breeding[0][0] == 2:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('6')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('2')
+        elif breeding[0][0] == 4:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('4')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('4')
+        elif breeding[0][0] == 6:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('2')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('6')
+        elif breeding[0][0] == 7:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('1')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('7')
+        elif breeding[0][0] == 8:
+            self.d_pkmn_i_2_i_egg_gender_1.setText('0')
+            self.d_pkmn_i_2_i_egg_gender_2.setText('8')
+
+        #Calculates egg cycles according to gen selected
+        if self.generation_id >= 2:
+            self.d_pkmn_i_2_i_egg_hcount.setText(str(breeding[0][1]))
+        if self.generation_id == 1:
+            self.d_pkmn_i_2_i_egg_sth.setText('N/A')
+            self.d_pkmn_i_2_i_egg_hcount.setText('N/A')
+        elif self.generation_id == 2:
+            self.d_pkmn_i_2_i_egg_sth.setText(str(breeding[0][1] * 256))
+        elif self.generation_id == 3:
+            self.d_pkmn_i_2_i_egg_sth.setText(str(breeding[0][1] * 256 + 256) + '/' +
+                                              str(int(((breeding[0][1] * 256) / 2) + 256)))
+        elif self.generation_id == 4:
+            self.d_pkmn_i_2_i_egg_sth.setText(str(breeding[0][1] * 255 + 255) + '/' +
+                                              str(int(((breeding[0][1] * 255) / 2) + 255)))
+        elif self.generation_id >= 5:
+            self.d_pkmn_i_2_i_egg_sth.setText(str(breeding[0][1] * 257) + '/' + str(int((breeding[0][1] * 257) / 2)))
+        if self.game_selected == 0:  # When National Dex is selected latest step calc is used, independent of active gen
+            self.d_pkmn_i_2_i_egg_sth.setText(str(breeding[0][1] * 257) + '/' + str(int((breeding[0][1] * 257) / 2)))
+
+        self.d_pkmn_i_2_i_egg_group_1.setText(breeding[2][0])
+        if len(breeding[2]) == 2:
+            self.d_pkmn_i_2_i_egg_group_2.setText(breeding[2][1])
+        else:
+            self.d_pkmn_i_2_i_egg_group_2.setText('')
+
+    def set_breeding_compatible(self, item):
+        self.set_current_pokemon(item.data(32))
 
     def search_pkmn(self):
         query = self.i_pkmn_search_bar.text().lower().split()
