@@ -1,7 +1,7 @@
 
 ![Logo](resources/logo.png)
 
-###Pokédex with Python
+### Pokédex with Python
 
 ![Pokémon](resources/screenshots/pokemon_image.jpg)
 
