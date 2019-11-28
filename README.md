@@ -1,9 +1,9 @@
 
 ![Logo](resources/logo.png)
 
-###Pokédex with Python
+![Pokémon](resources/screenshots.png)
 
-![Pokémon](resources/screenshots/pokemon_image.jpg)
+### Pokédex with Python
 
 Desktop application made with [Python](https://www.python.org/), 
 [PyQt5](https://www.riverbankcomputing.com/software/pyqt/intro) and 
@@ -14,8 +14,6 @@ executable, you can use the program without the need to install Python on your m
 I'm affraid you'll will have to install Python if you're on Linux or Mac.
 
 ### Sources
-
-![Pokédex](resources/screenshots/pokedex.jpg)
 
 Database by [Veekun](https://github.com/veekun/pokedex).
 It is currently updated up until Ultra Sun and Ultra Moon versions.
@@ -33,8 +31,6 @@ For Gen VI and later I've used the ones available at
 forums, created by the very talented spriters that share their work there.
 
 ### What's the point?
-
-![Stats](resources/screenshots/pokemon_stats.jpg)
 
 Instead of using an api like [PokéAPI](https://pokeapi.co/). 
 By powering the application with an offline database you don't need an internet connection to use it. 
