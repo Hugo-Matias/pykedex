@@ -21,7 +21,7 @@ class PokemonObject:
         name = self.item.text()
         types = self.get_types()
         # Stats - Header
-        flavor = self.get_stats_description()
+        desc = self.get_stats_description()
         # Stats  - Damage
         abilities = self.get_stats_abilities()
         damage = self.get_stats_damage_types(types)
@@ -32,19 +32,25 @@ class PokemonObject:
         evo_data = self.get_evo_data(evo_chain)
         # Stats - Breeding
         breeding = self.get_breeding_data()
+        # Stats - Training
+        training = self.get_training_data()
+        # Stats - Flavor
+        flavor = self.get_flavor_data()
         pokemon = {'version': version,
                    'version_group': version_group,
                    'species_id': species_id,
                    'name': name,
                    'number': number,
                    'types': types,
-                   'flavor': flavor,
+                   'desc': desc,
                    'abilities': abilities,
                    'damage': damage,
                    'stats': stats,
                    'evo_chain': evo_chain,
                    'evo_data': evo_data,
-                   'breeding': breeding}
+                   'breeding': breeding,
+                   'training': training,
+                   'flavor': flavor}
 
         return pokemon
 
@@ -335,12 +341,12 @@ class PokemonObject:
                          tuple([group_name[1] for group_name in egg_groups])]
 
         compatible_pokemons = []
-        if breeding_data[1][0] != 15:  # Checks if sel. pokemon doesn't belong to Undiscovered egg group (i.e No-Eggs)
+        if breeding_data[1][0] != 15 and breeding_data[1][0] != 13:  # No Undiscovered and no Ditto groups
             if breeding_data[0][0] != -1:  # Checks if sel. pokemon is not genderless
                 for pokemon in self.base_pokemons:
                     # Filters single gender pokemon from reproducing with same gender (ex. Nidoran F. w/ Kangaskhan)
                     # Genderless and Undiscovered egg group are also filtered out
-                    if pokemon[3] != -1 and \
+                    if (pokemon[3] != -1 or pokemon[2][0] == 13) and \
                             pokemon[2][0] != 15 and \
                             breeding_data[0][0] + pokemon[3] != 16 and \
                             breeding_data[0][0] + pokemon[3] != 0:
@@ -353,7 +359,9 @@ class PokemonObject:
                             if pokemon[2][0] == 13 and pokemon not in compatible_pokemons:
                                 compatible_pokemons.append(pokemon)
             else:
-                compatible_pokemons = [((132, 132), '', (13,), -1)]  # Ditto data for genderless pokemon
+                for pokemon in self.base_pokemons:
+                    if pokemon[2][0] == 13:
+                        compatible_pokemons.append(pokemon)  # Adds Ditto for genderless pokemon
 
         if self.item.data(33) == 132:  # Creates Ditto compatibles list, every pkmn except Undiscovered/Ditto egg groups
             for pokemon in self.base_pokemons:
@@ -362,6 +370,107 @@ class PokemonObject:
 
         self.populate_list(compatible_pokemons, 'egg_group')
         return breeding_data
+
+    def get_training_data(self):
+        query_t = 'SELECT pokemon.base_experience, ' \
+                'pokemon_species.capture_rate, pokemon_species.base_happiness, ' \
+                'growth_rate_prose.name ' \
+                'FROM pokemon ' \
+                'INNER JOIN pokemon_species ON pokemon.id = pokemon_species.id ' \
+                'INNER JOIN growth_rate_prose ON pokemon_species.growth_rate_id = growth_rate_prose.growth_rate_id ' \
+                'WHERE pokemon.id = ' + str(self.item.data(32)) + ' AND growth_rate_prose.local_language_id = '
+
+        training_data = self.fetch_db_query(query_t + str(self.local_language_id))
+        if not training_data:
+            training_data = self.fetch_db_query(query_t + str(self.local_language_id_en))
+
+        def get_effort_points(stat_id):
+            points = self.fetch_db('effort', 'pokemon_stats',
+                                   'pokemon_id = ' + str(self.item.data(32)) +
+                                   ' AND stat_id =' + str(stat_id) + ' AND effort > 0')
+            if points:
+                points = points[0][0]
+
+            return points
+
+        effort_points = {}
+        effort_points['hp'] = get_effort_points(1)
+        effort_points['atk'] = get_effort_points(2)
+        effort_points['def'] = get_effort_points(3)
+        effort_points['spa'] = get_effort_points(4)
+        effort_points['spd'] = get_effort_points(5)
+        effort_points['spe'] = get_effort_points(6)
+
+        training_data = training_data + [effort_points]
+
+        return training_data
+
+    def get_flavor_data(self):
+        pokemon_id = str(self.item.data(33))
+        version = str(self.game_selected)
+        language = str(self.local_language_id)
+        language_en = str(self.local_language_id_en)
+
+        flavor = {}
+        flavor['height'] = self.fetch_db('height', 'pokemon', 'id =' + pokemon_id)[0][0]
+        flavor['weight'] = self.fetch_db('weight', 'pokemon', 'id =' + pokemon_id)[0][0]
+        flavor['species'] = self.fetch_db('genus', 'pokemon_species_names', 'pokemon_species_id =' + pokemon_id)[0][0]
+
+        flavor['species'] = self.fetch_db('genus', 'pokemon_species_names',
+                                          'pokemon_species_id =' + pokemon_id +
+                                          ' AND local_language_id = ' + language)[0][0]
+        if not flavor['species']:
+            flavor['species'] = self.fetch_db('genus', 'pokemon_species_names',
+                                              'pokemon_species_id =' + pokemon_id +
+                                              ' AND local_language_id = ' + language_en)[0][0]
+
+        flavor['shape'] = self.fetch_db_join('pokemon_species.shape_id, pokemon_shape_prose.awesome_name',
+                                             'pokemon_species',
+                                             'pokemon_shape_prose ON '
+                                             'pokemon_species.shape_id = pokemon_shape_prose.pokemon_shape_id',
+                                             'pokemon_species.id =' + pokemon_id +
+                                             ' AND local_language_id = ' + language)[0]
+        if not flavor['shape']:
+            flavor['shape'] = self.fetch_db_join('pokemon_species.shape_id, pokemon_shape_prose.awesome_name',
+                                                 'pokemon_species',
+                                                 'pokemon_shape_prose ON '
+                                                 'pokemon_species.shape_id = pokemon_shape_prose.pokemon_shape_id',
+                                                 'pokemon_species.id =' + pokemon_id +
+                                                 ' AND local_language_id = ' + language_en)[0]
+
+        flavor['habitat'] = self.fetch_db('habitat_id', 'pokemon_species', 'id = ' + pokemon_id)[0][0]
+
+        flavor['color'] = self.fetch_db_join('pokemon_species.color_id, pokemon_color_names.name',
+                                             'pokemon_species',
+                                             'pokemon_color_names '
+                                             'ON pokemon_species.color_id = pokemon_color_names.pokemon_color_id',
+                                             'pokemon_species.id = ' + pokemon_id +
+                                             ' AND pokemon_color_names.local_language_id = ' + language)[0]
+        if not flavor['color']:
+            flavor['color'] = self.fetch_db_join('pokemon_species.color_id, pokemon_color_names.name',
+                                                 'pokemon_species',
+                                                 'pokemon_color_names '
+                                                 'ON pokemon_species.color_id = pokemon_color_names.pokemon_color_id',
+                                                 'pokemon_species.id = ' + pokemon_id +
+                                                 ' AND pokemon_color_names.local_language_id = ' + language_en)[0]
+        try:
+            flavor['item'] = self.fetch_db_join('pokemon_items.item_id, pokemon_items.rarity, item_names.name',
+                                                'pokemon_items',
+                                                'item_names ON pokemon_items.item_id = item_names.item_id',
+                                                'pokemon_items.pokemon_id = ' + pokemon_id +
+                                                ' AND pokemon_items.version_id = ' + version +
+                                                ' AND item_names.local_language_id = ' + language)[0]
+            if not flavor['item']:
+                flavor['item'] = self.fetch_db_join('pokemon_items.item_id, pokemon_items.rarity, item_names.name',
+                                                    'pokemon_items',
+                                                    'item_names ON pokemon_items.item_id = item_names.item_id',
+                                                    'pokemon_items.pokemon_id = ' + pokemon_id +
+                                                    ' AND pokemon_items.version_id = ' + version +
+                                                    ' AND item_names.local_language_id = ' + language_en)[0]
+        except IndexError:
+            flavor['item'] = []
+
+        return flavor
 
     def get_base_pokemons(self):
         initial_base_list = [pokemon[0] for pokemon in

@@ -1,7 +1,8 @@
 import re
 from PyQt5.QtGui import QPixmap, QFontMetrics
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QFile, QTextStream, QIODevice
 from PyQt5.QtWidgets import QListWidgetItem
+from PyQt5.QtMultimedia import QSound
 from objects import pokemon, writer
 
 
@@ -42,7 +43,7 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                 except TypeError:
                     pass
         else:
-            print('Error setting pokemon. Check function set_current_pokemon')
+            pass
 
     def set_pokemon_display_page(self):
         # Check buttons Img|Stats|Moves|Loc
@@ -92,14 +93,12 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
 
     def set_stats_page(self):
         self.set_stats_basic()
-
         self.set_stats_damage()
-
         self.set_stats_base_stats()
-
         self.set_evolution_chain()
-
         self.set_breeding()
+        self.set_stats_training()
+        self.set_stats_flavor()
 
     def set_item_icons(self, item_id, phase, branched=False):
         pixmap = QPixmap(':/item/item/' + str(item_id) + '.png')
@@ -299,13 +298,23 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                     for evo_sprite_4_2 in (1, 2):
                         eval('self.d_pkmn_i_2_i_evo_sprite_4_2_' + str(evo_sprite_4_2)).hide()
 
+    def set_caught_pokemon(self):
+        pokemon = self.pokemon['species_id']
+        version = self.game_selected
+        version_key = self.caught_pokemon[version]
+
+        if pokemon not in version_key:
+            version_key.append(pokemon)
+        else:
+            version_key.remove(pokemon)
+
     def set_stats_basic(self):
         # HEADER - Sprites and Description
         self.set_sprites()
         # Set description and resize font if necessary, default 12 points
         f = self.d_pkmn_i_2_desc.font()
         f.setPointSize(12)
-        self.d_pkmn_i_2_desc.setText(self.pokemon['flavor'])
+        self.d_pkmn_i_2_desc.setText(self.pokemon['desc'])
         width = self.d_pkmn_i_2_desc.fontMetrics().boundingRect(self.d_pkmn_i_2_desc.text()).width()
         text_size_factor = 276 / width + 0.45
         if text_size_factor <= 1:
@@ -347,11 +356,11 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
 
     def set_stats_base_stats(self):
         def change_bar_color(bar, value, stat):
-            red = "css/progress_bar/red.css"
-            orange = "css/progress_bar/orange.css"
-            yellow = "css/progress_bar/yellow.css"
-            green = "css/progress_bar/green.css"
-            cyan = "css/progress_bar/cyan.css"
+            red = QFile(":/css/css/progress_bar/red.css")
+            orange = QFile(":/css/css/progress_bar/orange.css")
+            yellow = QFile(":/css/css/progress_bar/yellow.css")
+            green = QFile(":/css/css/progress_bar/green.css")
+            cyan = QFile(":/css/css/progress_bar/cyan.css")
             if stat <= 6:
                 if value <= 51:
                     stylesheet = red
@@ -374,8 +383,10 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                     stylesheet = green
                 elif 1020 < value <= 1275:
                     stylesheet = cyan
-            with open(stylesheet, "r") as css:
-                bar.setStyleSheet(css.read())
+
+            stylesheet.open(QIODevice.ReadOnly)
+            bar.setStyleSheet(QTextStream(stylesheet).readAll())
+
 
         for i in range(1, 8):
             for tuple in self.pokemon['stats']:
@@ -492,13 +503,75 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
     def set_breeding_compatible(self, item):
         self.set_current_pokemon(item.data(32))
 
+    def set_stats_training(self):
+        pk = self.pokemon['training']
+        self.d_pkmn_i_2_i_t_exp.setText(str(pk[0][0]))
+        self.d_pkmn_i_2_i_t_capt.setText(str(pk[0][1]))
+        self.d_pkmn_i_2_i_t_happiness.setText(str(pk[0][2]))
+        self.d_pkmn_i_2_i_t_growth.setText(pk[0][3])
+
+        for stat in ['hp', 'atk', 'def', 'spa', 'spd', 'spe']:
+            eval('self.d_pkmn_i_2_i_t_points_' + stat + '.clear()')
+
+        if pk[1]['hp']:
+            self.d_pkmn_i_2_i_t_points_hp.setText(str(pk[1]['hp']))
+        if pk[1]['atk']:
+            self.d_pkmn_i_2_i_t_points_atk.setText(str(pk[1]['atk']))
+        if pk[1]['def']:
+            self.d_pkmn_i_2_i_t_points_def.setText(str(pk[1]['def']))
+        if pk[1]['spa']:
+            self.d_pkmn_i_2_i_t_points_spa.setText(str(pk[1]['spa']))
+        if pk[1]['spd']:
+            self.d_pkmn_i_2_i_t_points_spd.setText(str(pk[1]['spd']))
+        if pk[1]['spe']:
+            self.d_pkmn_i_2_i_t_points_spe.setText(str(pk[1]['spe']))
+
+    def set_stats_flavor(self):
+        pk = self.pokemon['flavor']
+        self.d_pkmn_i_2_i_f_height.setText(str(pk['height'] / 10) + ' m')
+        self.d_pkmn_i_2_i_f_weight.setText(str(pk['weight'] / 10) + ' kg')
+        species = re.sub(r'Pok\u00e9mon', '', pk['species'])
+        self.d_pkmn_i_2_i_f_species.setText(species)
+        if pk['shape'][1] == 'Anthropomorphic':
+            shape = 'Anthropo-\nmorphic'
+        else:
+            shape = pk['shape'][1]
+        self.d_pkmn_i_2_i_f_shape.setText(shape)
+        shape_pix = QPixmap(':/pokemon/pokemon/shapes/' + str(pk['shape'][0]) + '.png')
+        self.d_pkmn_i_2_i_f_shape_icon.setPixmap(shape_pix)
+        self.d_pkmn_i_2_i_f_shape_icon.show()
+        print_pix = QPixmap(':/pokemon/pokemon/footprints/' + str(self.pokemon['species_id']) + '.png')
+        self.d_pkmn_i_2_i_f_footprint_icon.setPixmap(print_pix)
+        self.d_pkmn_i_2_i_f_footprint_icon.show()
+        habitat_pix = QPixmap(':/pokemon/pokemon/habitats/' + str(pk['habitat']) + '.png')
+        self.d_pkmn_i_2_i_f_habitat_icon.setPixmap(habitat_pix)
+        self.d_pkmn_i_2_i_f_habitat_icon.show()
+        self.d_pkmn_i_2_i_f_color.setText(pk['color'][1])
+        colors = ['#2c2c2c', '#1168e9', '#b56415', '#8b8b8b', '#95d518',
+                  '#eb2985', '#9045ed', '#ee4545', '#ececec', '#efd62b']
+        self.d_pkmn_i_2_i_f_color.setStyleSheet('color: ' + colors[pk['color'][0] - 1])
+        if pk['item']:
+            self.d_pkmn_i_2_i_f_item.setText(pk['item'][2])
+            self.d_pkmn_i_2_i_f_item_rarity.setText(str(pk['item'][1]) + '%')
+            item_pix = QPixmap(':/pokemon/item/' + str(pk['item'][0]) + '.png')
+            self.d_pkmn_i_2_i_f_item_icon.setPixmap(item_pix)
+            self.d_pkmn_i_2_i_f_item_icon.show()
+        else:
+            self.d_pkmn_i_2_i_f_item.clear()
+            self.d_pkmn_i_2_i_f_item_rarity.clear()
+            self.d_pkmn_i_2_i_f_item_icon.hide()
+
+    def play_audio_cry(self):
+        sound = ':/pokemon/pokemon/cries/{id}.wav'.format(id=str(self.pokemon['species_id']))
+        QSound.play(sound)
+
     def search_pkmn(self):
         query = self.i_pkmn_search_bar.text().lower().split()
         filtered_items = []
 
         # Reset list by entering empty string
         if not query:
-            self.filter_pkmn(filtered_items, True)
+            self.filter_pkmn(filtered_items, reset=True)
 
         else:
             # By Name
@@ -512,7 +585,7 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                     r = [i[0] for i in r]
                     filtered_items.append(r)
                 filtered_items = [item for sublist in filtered_items for item in sublist]
-                self.filter_pkmn(filtered_items, False)
+                self.filter_pkmn(filtered_items)
 
             # By Number
             if self.i_pkmn_by_number.isChecked():
@@ -527,10 +600,18 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                     except:
                         self.statusbar.showMessage('Please type numbers only.', 5000)
                 filtered_items = [item for sublist in filtered_items for item in sublist]
-                self.filter_pkmn(filtered_items, False)
+                self.filter_pkmn(filtered_items)
 
             # By Type
             if self.i_pkmn_by_type.isChecked():
+                language = str(self.local_language_id)
+                sql_query = 'SELECT pokemon_types.pokemon_id ' \
+                            'FROM type_names ' \
+                            'INNER JOIN pokemon_types ON pokemon_types.type_id = type_names.type_id ' \
+                            'WHERE name LIKE {q} ' \
+                            'AND pokemon_types.slot = {slot} ' \
+                            'AND type_names.local_language_id= {language}'
+
                 for q in query:
                     if '+' in q:
                         q = q.split('+')
@@ -538,25 +619,26 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                             self.statusbar.showMessage('Please insert only 2 types for combo searching.', 4000)
                             self.i_pkmn_search_bar.setText('')
                         else:
-                            if q[0]:
+                            if q[0] and q[1]:
                                 q1 = '"%' + q[0] + '%"'
-                            else:
-                                q1 = '""'
-                            if q[1]:
                                 q2 = '"%' + q[1] + '%"'
-                            else:
-                                q2 = '""'
 
-                            r = self.fetch_db_join('pokemon_types.pokemon_id',
-                                                   'type_names',
-                                                   'pokemon_types ON pokemon_types.type_id = type_names.type_id',
-                                                   '(name LIKE '+q1+' AND pokemon_types.slot= 1 '
-                                                   'AND type_names.local_language_id= '+str(self.local_language_id) +
-                                                   ') OR ('
-                                                   'name LIKE '+q2+' AND pokemon_types.slot= 2 '
-                                                   'AND type_names.local_language_id= '+str(self.local_language_id)+')')
-                            r = [i[0] for i in r]
-                            filtered_items.append(r)
+                                r1 = self.fetch_db_query(sql_query.format(q=q1, slot='1', language=language))
+                                r2 = self.fetch_db_query(sql_query.format(q=q2, slot='2', language=language))
+                                r = [ele[0] for ele in r1 if ele in r2]
+                                filtered_items.append(r)
+
+                            if q[0] and not q[1]:
+                                q1 = '"%' + q[0] + '%"'
+                                r = self.fetch_db_query(sql_query.format(q=q1, slot='1', language=language))
+                                r = [i[0] for i in r]
+                                filtered_items.append(r)
+
+                            elif not q[0] and q[1]:
+                                q2 = '"%' + q[1] + '%"'
+                                r = self.fetch_db_query(sql_query.format(q=q2, slot='2', language=language))
+                                r = [i[0] for i in r]
+                                filtered_items.append(r)
                     else:
                         q = '"%' + q + '%"'
                         r = self.fetch_db_join('pokemon_types.pokemon_id',
@@ -567,9 +649,9 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                         r = [i[0] for i in r]
                         filtered_items.append(r)
                 filtered_items = [item for sublist in filtered_items for item in sublist]
-                self.filter_pkmn(filtered_items, False)
+                self.filter_pkmn(filtered_items)
 
-    def filter_pkmn(self, filtered_items, reset):
+    def filter_pkmn(self, filtered_items, reset=False):
         all_items = self.m_pkmn_list.findItems('*', Qt.MatchWildcard)
         for item in all_items:
             if not reset:
@@ -579,6 +661,15 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
                         item.setHidden(False)
             else:
                 item.setHidden(False)
+
+    def filter_caught_pkmn(self, state):
+        if state == 0:
+            self.filter_pkmn([], reset=True)
+
+        if state == 2:
+            version = self.game_selected
+            filtered_items = self.caught_pokemon[version]
+            self.filter_pkmn(filtered_items)
 
     def filter_name_chars(self, name):
         name = re.sub('\u2642', '-m', name)

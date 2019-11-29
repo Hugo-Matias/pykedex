@@ -1,7 +1,8 @@
 import sys, sqlite3
 from PyQt5.QtGui import QPixmap, QIcon, QCursor
 from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem, QListView
-from PyQt5.QtCore import Qt, QEvent, QSettings
+from PyQt5.QtCore import Qt, QEvent, QSettings, QFile, QIODevice, QTextStream
+from collections import defaultdict
 from gui import Ui_MainWindow
 from views.view_pokedex import PokedexView
 from views.view_pokemon import PokemonView
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         #
         self.conn = sqlite3.connect('db.sqlite')
         # USER SETTINGS
-        self.caught_pokemon = {}  #TODO
+        self.caught_pokemon = defaultdict(list)
         # GLOBAL VARIABLES
         self.generation_id = 1
         self.pokedex_id = 2
@@ -92,11 +93,14 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         self.m_pkmn_game_btn.clicked.connect(lambda: self.set_view('pokedex'))
         self.i_pkmn_search_bar.textChanged.connect(self.search_pkmn)
         self.i_pkmn_search_btn.clicked.connect(self.search_pkmn)
+        self.i_pkmn_filter_caught.stateChanged.connect(self.filter_caught_pkmn)
+        # self.i_pkmn_filter_caught.installEventFilter(self)
         self.d_pkmn_i_2_i_iv_level.textChanged.connect(self.calc_ivs)
         self.d_pkmn_i_2_i_iv_effort.textChanged.connect(self.calc_ivs)
         self.d_pkmn_i_2_sprite_b.installEventFilter(self)
         self.d_pkmn_i_2_sprite_f.installEventFilter(self)
         self.i_pkmn_search_btn.installEventFilter(self)
+        self.d_pkmn_i_2_caught.installEventFilter(self)
         for mode_btn in self.mode_btns:
             mode_btn[1].clicked.connect(self.set_pokemon_display_page)
             mode_btn[1].installEventFilter(self)
@@ -109,6 +113,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             evo_chain_sprite.installEventFilter(self)
         self.d_pkmn_i_2_i_egg_comp_list.setMovement(QListView.Static)
         self.d_pkmn_i_2_i_egg_comp_list.itemClicked.connect(self.set_breeding_compatible)
+        self.d_pkmn_i_2_i_f_cry.clicked.connect(self.play_audio_cry)
 
         #
         # START-UP FUNCTIONS
@@ -213,6 +218,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
 
     def save_settings(self):
         settings = QSettings('HLM', 'Pykedex')
+        settings.setValue('caught_pokemon', self.caught_pokemon)
         settings.setValue('generation_id', self.generation_id)
         settings.setValue('pokedex_id', self.pokedex_id)
         settings.setValue('local_language_id', self.local_language_id)
@@ -224,6 +230,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
 
     def restore_settings(self):
         settings = QSettings('HLM', 'Pykedex')
+        self.caught_pokemon = settings.value('caught_pokemon', self.caught_pokemon)
         self.pokedex_id = settings.value('pokedex_id', self.pokedex_id, type=int)
         self.local_language_id = settings.value('local_language_id', self.local_language_id, type=int)
         self.last_view = settings.value('last_view', self.last_view, type=int)
@@ -248,7 +255,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
                                  '#m_pokedex_activate:pressed {'
                                  'background-image: url(:/img/buttons/pokedex/select_clicked.png);}'
                                  '#m_pokedex_activate:flat {border: none}')
-            self.statusbar.showMessage('Select the current game database.', 3000)
         if event.type() == QEvent.Leave and source is self.m_pokedex_activate:
             source.setStyleSheet('#m_pokedex_activate {background-image: url(:/img/buttons/pokedex/select_normal.png);}'
                                  '#m_pokedex_activate:flat {border: none}')
@@ -382,6 +388,24 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
                                                 str(self.pokemon['evo_data']['stg_2'].index(pokemon) + 1))
                             manage_evolution_states(index)
 
+            if event.type() == QEvent.MouseButtonPress and source == self.d_pkmn_i_2_caught:
+                self.set_caught_pokemon()
+            if event.type() == QEvent.Enter and source == self.d_pkmn_i_2_caught:
+                source.setCursor(QCursor(Qt.PointingHandCursor))
+
+            if self.caught_pokemon:
+                # Manages caught pokemon button
+                pokemon = self.pokemon['species_id']
+                version = self.game_selected
+                version_key = self.caught_pokemon[version]
+
+                if pokemon not in version_key:
+                    caught_pix = QPixmap(':/img/buttons/pokemon/caught_off.png')
+                    self.d_pkmn_i_2_caught.setPixmap(caught_pix)
+                else:
+                    caught_pix = QPixmap(':/img/buttons/pokemon/caught_on.png')
+                    self.d_pkmn_i_2_caught.setPixmap(caught_pix)
+
         return super(MainWindow, self).eventFilter(source, event)
 
 
@@ -389,9 +413,9 @@ def main():
     app = QApplication(sys.argv)
     main = MainWindow()
 
-    global_css = "css/global.css"
-    with open(global_css, "r") as css:
-        app.setStyleSheet(css.read())
+    global_css = QFile(":/css/css/global.css")
+    global_css.open(QIODevice.ReadOnly)
+    app.setStyleSheet(QTextStream(global_css).readAll())
 
     sys.exit(app.exec_())
 
