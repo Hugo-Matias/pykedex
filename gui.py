@@ -1861,6 +1861,46 @@ class Ui_MainWindow(object):
         self.d_pkmn_i_2_i_f_cry.setObjectName("d_pkmn_i_2_i_f_cry")
         self.d_pkmn_i_2_info.addWidget(self.d_pkmn_i_2_i_fla)
         self.d_pkmn_i.addWidget(self.d_pkmn_i_2)
+        self.d_pkmn_i_3 = QtWidgets.QWidget()
+        self.d_pkmn_i_3.setStyleSheet("#d_pkmn_i_3 {background-image: url(:/bg/bgs/pkmn/display.png);}\n"
+"\n"
+"QTableWidget:item{border-bottom : 1px solid #e6e6e6;}\n"
+"\n"
+"QHeaderView:section {background-color: #2c2c2c; color: white;\n"
+"font: 75 bold 10pt \"Montserrat\";}\n"
+"\n"
+"QHeaderView::section:horizontal{border-top: 2px solid red;}")
+        self.d_pkmn_i_3.setObjectName("d_pkmn_i_3")
+        self.d_pkmn_i_3_table_level = QtWidgets.QTableWidget(self.d_pkmn_i_3)
+        self.d_pkmn_i_3_table_level.setGeometry(QtCore.QRect(90, 26, 524, 308))
+        self.d_pkmn_i_3_table_level.setStyleSheet("background-color: rgba(0,0,0,0);\n"
+"font: 75 11pt \"Century Gothic\";\n"
+"")
+        self.d_pkmn_i_3_table_level.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.d_pkmn_i_3_table_level.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.d_pkmn_i_3_table_level.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.d_pkmn_i_3_table_level.setTabKeyNavigation(False)
+        self.d_pkmn_i_3_table_level.setProperty("showDropIndicator", False)
+        self.d_pkmn_i_3_table_level.setDragDropOverwriteMode(False)
+        self.d_pkmn_i_3_table_level.setAlternatingRowColors(True)
+        self.d_pkmn_i_3_table_level.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        self.d_pkmn_i_3_table_level.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
+        self.d_pkmn_i_3_table_level.setIconSize(QtCore.QSize(50, 50))
+        self.d_pkmn_i_3_table_level.setShowGrid(False)
+        self.d_pkmn_i_3_table_level.setGridStyle(QtCore.Qt.SolidLine)
+        self.d_pkmn_i_3_table_level.setCornerButtonEnabled(False)
+        self.d_pkmn_i_3_table_level.setColumnCount(6)
+        self.d_pkmn_i_3_table_level.setObjectName("d_pkmn_i_3_table_level")
+        self.d_pkmn_i_3_table_level.setRowCount(0)
+        self.d_pkmn_i_3_table_level.horizontalHeader().setVisible(True)
+        self.d_pkmn_i_3_table_level.horizontalHeader().setCascadingSectionResizes(True)
+        self.d_pkmn_i_3_table_level.horizontalHeader().setDefaultSectionSize(100)
+        self.d_pkmn_i_3_table_level.horizontalHeader().setMinimumSectionSize(70)
+        self.d_pkmn_i_3_table_level.horizontalHeader().setSortIndicatorShown(False)
+        self.d_pkmn_i_3_table_level.horizontalHeader().setStretchLastSection(False)
+        self.d_pkmn_i_3_table_level.verticalHeader().setVisible(False)
+        self.d_pkmn_i_3_table_level.verticalHeader().setMinimumSectionSize(35)
+        self.d_pkmn_i.addWidget(self.d_pkmn_i_3)
         self.displayWidget.addWidget(self.d_pkmn)
         self.d_pokedex = QtWidgets.QWidget()
         self.d_pokedex.setStyleSheet("#d_pokedex{background-image: url(:/bg/bgs/clean/display.png);}\n"
@@ -2571,6 +2611,7 @@ class Ui_MainWindow(object):
         self.d_pkmn_i_2_i_f_color_label.setText(_translate("MainWindow", "Color"))
         self.d_pkmn_i_2_i_f_habitat_label.setText(_translate("MainWindow", "Habitat"))
         self.d_pkmn_i_2_i_f_cry_label.setText(_translate("MainWindow", "Cry"))
+        self.d_pkmn_i_3_table_level.setSortingEnabled(False)
         self.i_pkmn_by_name.setStatusTip(_translate("MainWindow", "Search Pokémon by Name.        Search multiple Pokémon by using space bar key.        For example: \" Pikachu   Charmander \""))
         self.i_pkmn_by_name.setText(_translate("MainWindow", "Name"))
         self.i_pkmn_by_type.setStatusTip(_translate("MainWindow", "Search Pokémon by Type.         Use the \'+\' character to separate type slots, you can also use space bar for multi search.        For example: \" electric   poison+ghost   grass+   +fire \""))

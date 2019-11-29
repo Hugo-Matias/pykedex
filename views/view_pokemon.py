@@ -1,7 +1,7 @@
 import re
-from PyQt5.QtGui import QPixmap, QFontMetrics
+from PyQt5.QtGui import QPixmap, QFontMetrics, QIcon, QFont
 from PyQt5.QtCore import Qt, QFile, QTextStream, QIODevice
-from PyQt5.QtWidgets import QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem, QTableWidgetItem, QHeaderView
 from PyQt5.QtMultimedia import QSound
 from objects import pokemon, writer
 
@@ -90,6 +90,9 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
 
         if self.pokemon_display_page == 2:
             self.set_stats_page()
+
+        if self.pokemon_display_page == 3:
+            self.set_moves_table()
 
     def set_stats_page(self):
         self.set_stats_basic()
@@ -564,6 +567,58 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
     def play_audio_cry(self):
         sound = ':/pokemon/pokemon/cries/{id}.wav'.format(id=str(self.pokemon['species_id']))
         QSound.play(sound)
+
+    def set_moves_table(self):
+
+        def populate_table(table, method):
+            moves = self.get_moves(method)
+            if method == 1:
+                table.setHorizontalHeaderLabels(['Lv.', 'Move', 'Type', 'Cat.', 'Power', 'Acc.'])
+            table.setRowCount(0)
+            for move in moves:
+                row_pos = table.rowCount()
+                table.insertRow(row_pos)
+
+                move_level = QTableWidgetItem(str(move[1]))
+                move_level.setTextAlignment(4)
+                table.setItem(row_pos, 0, move_level)
+
+                move_name = QTableWidgetItem(move[3])
+                move_name_font = QFont()
+                move_name_font.setBold(True)
+                move_name_font.setItalic(True)
+                move_name.setFont(move_name_font)
+                table.setItem(row_pos, 1, move_name)
+
+                move_type = QTableWidgetItem()
+                move_type_icon = QIcon()
+                move_type_icon.addPixmap(QPixmap(':/img/icons/types/' + str(move[4]) + '.png'),
+                                         mode=QIcon.Normal, state=QIcon.Off)
+                move_type.setIcon(move_type_icon)
+                table.setItem(row_pos, 2, move_type)
+
+                move_class_icon = QIcon()
+                move_class_icon.addPixmap(QPixmap(':/img/icons/move_class/' + str(move[5]) + '.png'),
+                                     mode=QIcon.Normal, state=QIcon.Off)
+                move_class = QTableWidgetItem()
+                move_class.setIcon(move_class_icon)
+                table.setItem(row_pos, 3, move_class)
+
+                power = str(move[6])
+                if power == 'None':
+                    power = '-'
+                table.setItem(row_pos, 4, QTableWidgetItem(power))
+
+                accuracy = str(move[7]) + '%'
+                if accuracy == 'None%':
+                    accuracy = '-'
+                table.setItem(row_pos, 5, QTableWidgetItem(accuracy))
+
+            header = table.horizontalHeader()
+            header.setSectionResizeMode(QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.Stretch)
+
+        populate_table(self.d_pkmn_i_3_table_level, 1)
 
     def search_pkmn(self):
         query = self.i_pkmn_search_bar.text().lower().split()

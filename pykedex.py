@@ -24,7 +24,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         self.generation_id = 1
         self.pokedex_id = 2
         self.game_selected = 0
-        self.current_pokemon = []
         self.local_language_id_en = 9
         self.local_language_id = 9
         self.last_view = 1  # 1 - Pokemon(default) | 2 - Pokedex
@@ -160,6 +159,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             self.create_pokemon_list()
             self.m_pkmn_list.setCurrentRow(self.selected_pokemon_row)
             self.base_pokemons = self.get_base_pokemons()
+
         if self.last_view == 2 or mode == 'pokedex':
             index = 1
             self.last_view = 2

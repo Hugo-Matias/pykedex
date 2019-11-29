@@ -504,3 +504,32 @@ class PokemonObject:
                                         tuple([group_id[0] for group_id in base_egg_groups]),
                                         gender_rate[0][0]))
         return base_pokemon_groups
+
+    def get_moves(self, method):
+        pokemon = str(self.item.data(33))
+        version = str(self.game_selected)
+        language = str(self.local_language_id)
+        language_en = str(self.local_language_id_en)
+
+        if version != '0':
+            version_group = str(self.fetch_db('version_group_id', 'versions', 'id = ' + version)[0][0])
+        else:
+            version_group = '18'
+
+        query = 'SELECT pokemon_moves.move_id, pokemon_moves."level", pokemon_moves."order", ' \
+                'move_names.name, moves.type_id, moves.damage_class_id, moves.power, moves.accuracy ' \
+                'FROM pokemon_moves ' \
+                'INNER JOIN move_names ON pokemon_moves.move_id = move_names.move_id ' \
+                'INNER JOIN moves ON pokemon_moves.move_id = moves.id ' \
+                'WHERE pokemon_moves.pokemon_id = {pokemon_id} ' \
+                'AND pokemon_moves.pokemon_move_method_id = {method} ' \
+                'AND pokemon_moves.version_group_id = {version_id} ' \
+                'AND move_names.local_language_id = {language} ' \
+                'ORDER BY pokemon_moves."level" ASC, pokemon_moves."order" ASC'
+
+        moves = self.fetch_db_query(query.format(pokemon_id=pokemon, method=str(method),
+                                                 version_id=version_group, language=language))
+        if not moves:
+            moves = self.fetch_db_query(query.format(pokemon_id=pokemon, method=str(method),
+                                                     version_id=version_group, language=language_en))
+        return moves
