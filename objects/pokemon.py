@@ -77,7 +77,7 @@ class PokemonObject:
         query = '''SELECT pokemon_types.type_id, type_names.name, pokemon_types.slot 
                 FROM pokemon_types INNER JOIN type_names 
                 ON type_names.type_id = pokemon_types.type_id 
-                WHERE pokemon_types.pokemon_id=''' + str(self.item.data(33)) +\
+                WHERE pokemon_types.pokemon_id=''' + str(self.item.data(33)) + \
                 ''' AND type_names.local_language_id ='''
 
         pokemon_types = self.fetch_db_query(query + str(self.local_language_id))
@@ -127,10 +127,10 @@ class PokemonObject:
         abilities = []
 
         fquery = 'SELECT ability_names.name, ability_prose.short_effect FROM ability_names ' \
-            'INNER JOIN pokemon_abilities ON pokemon_abilities.ability_id=ability_names.ability_id ' \
-            'INNER JOIN ability_prose ON ability_prose.ability_id = pokemon_abilities.ability_id ' \
-            'WHERE pokemon_abilities.pokemon_id = {pokemon_id} AND pokemon_abilities.slot = {slot} ' \
-            'AND ability_names.local_language_id = {language} AND ability_prose.local_language_id = {language}'
+                 'INNER JOIN pokemon_abilities ON pokemon_abilities.ability_id=ability_names.ability_id ' \
+                 'INNER JOIN ability_prose ON ability_prose.ability_id = pokemon_abilities.ability_id ' \
+                 'WHERE pokemon_abilities.pokemon_id = {pokemon_id} AND pokemon_abilities.slot = {slot} ' \
+                 'AND ability_names.local_language_id = {language} AND ability_prose.local_language_id = {language}'
 
         # query = fquery.format(pokemon_id=pokemon_id, slot=1, language=language)
         ability_1 = self.fetch_db_query(fquery.format(pokemon_id=pokemon_id, slot=1, language=language))
@@ -165,14 +165,14 @@ class PokemonObject:
             pokemon_types = [types[0][0], types[1][0]]
             damage_factor_1 = self.fetch_db_query(query.format(type=pokemon_types[0]))
             damage_factor_2 = self.fetch_db_query(query.format(type=pokemon_types[1]))
-            damage_factors = {key: value/100 for (key, value) in damage_factor_1}
+            damage_factors = {key: value / 100 for (key, value) in damage_factor_1}
             for (k, v) in damage_factor_2:
                 if k in damage_factors:
-                    damage_factors[k] *= v/100
+                    damage_factors[k] *= v / 100
         else:
             pokemon_types = [types[0][0]]
             damage_factors = self.fetch_db_query(query.format(type=pokemon_types[0]))
-            damage_factors = {key: value/100 for (key, value) in damage_factors}
+            damage_factors = {key: value / 100 for (key, value) in damage_factors}
 
         def convert_values(value):
             if value >= 1 or value == 0:
@@ -373,12 +373,12 @@ class PokemonObject:
 
     def get_training_data(self):
         query_t = 'SELECT pokemon.base_experience, ' \
-                'pokemon_species.capture_rate, pokemon_species.base_happiness, ' \
-                'growth_rate_prose.name ' \
-                'FROM pokemon ' \
-                'INNER JOIN pokemon_species ON pokemon.id = pokemon_species.id ' \
-                'INNER JOIN growth_rate_prose ON pokemon_species.growth_rate_id = growth_rate_prose.growth_rate_id ' \
-                'WHERE pokemon.id = ' + str(self.item.data(32)) + ' AND growth_rate_prose.local_language_id = '
+                  'pokemon_species.capture_rate, pokemon_species.base_happiness, ' \
+                  'growth_rate_prose.name ' \
+                  'FROM pokemon ' \
+                  'INNER JOIN pokemon_species ON pokemon.id = pokemon_species.id ' \
+                  'INNER JOIN growth_rate_prose ON pokemon_species.growth_rate_id = growth_rate_prose.growth_rate_id ' \
+                  'WHERE pokemon.id = ' + str(self.item.data(32)) + ' AND growth_rate_prose.local_language_id = '
 
         training_data = self.fetch_db_query(query_t + str(self.local_language_id))
         if not training_data:
@@ -500,7 +500,7 @@ class PokemonObject:
         for pokemon in base_pokemon_dex_numbers:
             base_egg_groups = self.fetch_db('egg_group_id', 'pokemon_egg_groups', 'species_id=' + str(pokemon[1]))
             gender_rate = self.fetch_db('gender_rate', 'pokemon_species', 'id=' + str(pokemon[1]))
-            base_pokemon_groups.append((pokemon,  '',
+            base_pokemon_groups.append((pokemon, '',
                                         tuple([group_id[0] for group_id in base_egg_groups]),
                                         gender_rate[0][0]))
         return base_pokemon_groups
@@ -516,16 +516,35 @@ class PokemonObject:
         else:
             version_group = '18'
 
-        query = 'SELECT pokemon_moves.move_id, pokemon_moves."level", pokemon_moves."order", ' \
-                'move_names.name, moves.type_id, moves.damage_class_id, moves.power, moves.accuracy ' \
-                'FROM pokemon_moves ' \
-                'INNER JOIN move_names ON pokemon_moves.move_id = move_names.move_id ' \
-                'INNER JOIN moves ON pokemon_moves.move_id = moves.id ' \
-                'WHERE pokemon_moves.pokemon_id = {pokemon_id} ' \
-                'AND pokemon_moves.pokemon_move_method_id = {method} ' \
-                'AND pokemon_moves.version_group_id = {version_id} ' \
-                'AND move_names.local_language_id = {language} ' \
-                'ORDER BY pokemon_moves."level" ASC, pokemon_moves."order" ASC'
+        if method != 4:
+            query = 'SELECT pokemon_moves.move_id, pokemon_moves."level", pokemon_moves."order", ' \
+                    'move_names.name, moves.type_id, moves.damage_class_id, moves.power, moves.accuracy ' \
+                    'FROM pokemon_moves ' \
+                    'INNER JOIN move_names ON pokemon_moves.move_id = move_names.move_id ' \
+                    'INNER JOIN moves ON pokemon_moves.move_id = moves.id ' \
+                    'WHERE pokemon_moves.pokemon_id = {pokemon_id} ' \
+                    'AND pokemon_moves.pokemon_move_method_id = {method} ' \
+                    'AND pokemon_moves.version_group_id = {version_id} ' \
+                    'AND move_names.local_language_id = {language} ' \
+                    'ORDER BY pokemon_moves."level" ASC, pokemon_moves."order" ASC, move_names.name ASC'
+
+        elif method == 4:  # Fetches TM/HM names
+            query = 'SELECT pokemon_moves.move_id, pokemon_moves."level", pokemon_moves."order", ' \
+                    'move_names.name, moves.type_id, moves.damage_class_id, moves.power, moves.accuracy, ' \
+                    'item_names.name ' \
+                    'FROM pokemon_moves ' \
+                    'INNER JOIN move_names ON pokemon_moves.move_id = move_names.move_id ' \
+                    'INNER JOIN moves ON pokemon_moves.move_id = moves.id ' \
+                    'INNER JOIN machines ON machines.move_id = pokemon_moves.move_id ' \
+                    'INNER JOIN item_names ON item_names.item_id = machines.item_id ' \
+                    'WHERE pokemon_moves.pokemon_id = {pokemon_id} ' \
+                    'AND pokemon_moves.pokemon_move_method_id = {method} ' \
+                    'AND pokemon_moves.version_group_id = {version_id} ' \
+                    'AND machines.version_group_id = {version_id} ' \
+                    'AND move_names.local_language_id = {language} ' \
+                    'AND item_names.local_language_id = {language} ' \
+                    'ORDER BY pokemon_moves."level" ASC, pokemon_moves."order" ASC, ' \
+                    'item_names.name ASC, move_names.name ASC '
 
         moves = self.fetch_db_query(query.format(pokemon_id=pokemon, method=str(method),
                                                  version_id=version_group, language=language))
@@ -533,3 +552,33 @@ class PokemonObject:
             moves = self.fetch_db_query(query.format(pokemon_id=pokemon, method=str(method),
                                                      version_id=version_group, language=language_en))
         return moves
+
+    def get_locations(self):
+        pokemon_id = self.pokemon['species_id']
+        version = self.game_selected
+        language = self.local_language_id
+        language_en = self.local_language_id_en
+
+        query = 'SELECT locations.id, region_names.name, location_names.name, encounter_slots.rarity,' \
+                'encounter_method_prose.name, ' \
+                'encounters.min_level, encounters.max_level ' \
+                'FROM region_names ' \
+                'INNER JOIN locations ON region_names.region_id = locations.region_id ' \
+                'INNER JOIN location_names ON location_names.location_id = locations.id ' \
+                'INNER JOIN location_areas ON location_areas.location_id = locations.id ' \
+                'INNER JOIN encounters ON encounters.location_area_id = location_areas.id ' \
+                'INNER JOIN encounter_slots ON encounter_slots.id = encounters.encounter_slot_id ' \
+                'INNER JOIN encounter_method_prose ' \
+                'ON encounter_method_prose.encounter_method_id = encounter_slots.encounter_method_id ' \
+                'WHERE encounters.pokemon_id = {pokemon_id} ' \
+                'AND encounters.version_id = {version_id} ' \
+                'AND region_names.local_language_id = {language} ' \
+                'AND location_names.local_language_id = {language} ' \
+                'AND encounter_method_prose.local_language_id = {language} ' \
+                'ORDER BY location_names.name ASC, encounter_slots.rarity ASC'
+
+        locations = self.fetch_db_query(query.format(pokemon_id=pokemon_id, version_id=version, language=language))
+        if not locations:
+            locations = self.fetch_db_query(query.format(pokemon_id=pokemon_id,
+                                                         version_id=version, language=language_en))
+        return locations

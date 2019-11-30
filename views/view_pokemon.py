@@ -1,7 +1,7 @@
 import re
 from PyQt5.QtGui import QPixmap, QFontMetrics, QIcon, QFont
 from PyQt5.QtCore import Qt, QFile, QTextStream, QIODevice
-from PyQt5.QtWidgets import QListWidgetItem, QTableWidgetItem, QHeaderView
+from PyQt5.QtWidgets import QListWidgetItem, QTableWidgetItem, QHeaderView, QRadioButton
 from PyQt5.QtMultimedia import QSound
 from objects import pokemon, writer
 
@@ -94,13 +94,20 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
         if self.pokemon_display_page == 3:
             self.set_moves_table()
 
+        if self.pokemon_display_page == 4:
+            self.set_locations()
+
     def set_stats_page(self):
         self.set_stats_basic()
         self.set_stats_damage()
         self.set_stats_base_stats()
         self.set_evolution_chain()
         self.set_breeding()
-        self.set_stats_training()
+        try:
+            self.set_stats_training()
+        except:  # Victini has empty training info and will give an error if gen v is selected
+            pass
+
         self.set_stats_flavor()
 
     def set_item_icons(self, item_id, phase, branched=False):
@@ -513,6 +520,7 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
         self.d_pkmn_i_2_i_t_happiness.setText(str(pk[0][2]))
         self.d_pkmn_i_2_i_t_growth.setText(pk[0][3])
 
+
         for stat in ['hp', 'atk', 'def', 'spa', 'spd', 'spe']:
             eval('self.d_pkmn_i_2_i_t_points_' + stat + '.clear()')
 
@@ -570,10 +578,20 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
 
     def set_moves_table(self):
 
-        def populate_table(table, method):
+        def populate_table(method):
+            table = self.d_pkmn_i_3_table
             moves = self.get_moves(method)
+            table.horizontalHeader().show()  # Bug on Qt Designer sets Visible bool to false when saving, this fixes it
             if method == 1:
-                table.setHorizontalHeaderLabels(['Lv.', 'Move', 'Type', 'Cat.', 'Power', 'Acc.'])
+                table.setHorizontalHeaderLabels(['Level', 'Move', 'Type', 'Class', 'Power', 'Accuracy'])
+                indexes = {'lvl': 0, 'move': 1, 'type': 2, 'cat': 3, 'power': 4, 'acc': 5, 'mac': 7}
+            elif method == 2 or method == 3:
+                table.setHorizontalHeaderLabels(['', 'Move', 'Type', 'Class', 'Power', 'Accuracy'])
+                indexes = {'lvl': 7, 'move': 1, 'type': 2, 'cat': 3, 'power': 4, 'acc': 5, 'mac': 7}
+            elif method == 4:
+                table.setHorizontalHeaderLabels(['TM/HM', 'Move', 'Type', 'Class', 'Power', 'Accuracy'])
+                indexes = {'lvl': 7, 'move': 1, 'type': 2, 'cat': 3, 'power': 4, 'acc': 5, 'mac': 0}
+
             table.setRowCount(0)
             for move in moves:
                 row_pos = table.rowCount()
@@ -581,44 +599,126 @@ class PokemonView(pokemon.PokemonObject, writer.Writer):
 
                 move_level = QTableWidgetItem(str(move[1]))
                 move_level.setTextAlignment(4)
-                table.setItem(row_pos, 0, move_level)
+                table.setItem(row_pos, indexes['lvl'], move_level)
 
                 move_name = QTableWidgetItem(move[3])
                 move_name_font = QFont()
                 move_name_font.setBold(True)
                 move_name_font.setItalic(True)
                 move_name.setFont(move_name_font)
-                table.setItem(row_pos, 1, move_name)
+                table.setItem(row_pos, indexes['move'], move_name)
 
                 move_type = QTableWidgetItem()
                 move_type_icon = QIcon()
                 move_type_icon.addPixmap(QPixmap(':/img/icons/types/' + str(move[4]) + '.png'),
                                          mode=QIcon.Normal, state=QIcon.Off)
                 move_type.setIcon(move_type_icon)
-                table.setItem(row_pos, 2, move_type)
+                table.setItem(row_pos, indexes['type'], move_type)
 
                 move_class_icon = QIcon()
                 move_class_icon.addPixmap(QPixmap(':/img/icons/move_class/' + str(move[5]) + '.png'),
-                                     mode=QIcon.Normal, state=QIcon.Off)
+                                          mode=QIcon.Normal, state=QIcon.Off)
                 move_class = QTableWidgetItem()
                 move_class.setIcon(move_class_icon)
-                table.setItem(row_pos, 3, move_class)
+                table.setItem(row_pos, indexes['cat'], move_class)
 
                 power = str(move[6])
                 if power == 'None':
                     power = '-'
-                table.setItem(row_pos, 4, QTableWidgetItem(power))
+                table.setItem(row_pos, indexes['power'], QTableWidgetItem(power))
 
                 accuracy = str(move[7]) + '%'
                 if accuracy == 'None%':
                     accuracy = '-'
-                table.setItem(row_pos, 5, QTableWidgetItem(accuracy))
+                table.setItem(row_pos, indexes['acc'], QTableWidgetItem(accuracy))
+
+                if len(move) > 8:
+                    move_mac = QTableWidgetItem(str(move[8]))
+                    move_mac.setTextAlignment(4)
+                    table.setItem(row_pos, indexes['mac'], move_mac)
 
             header = table.horizontalHeader()
             header.setSectionResizeMode(QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(1, QHeaderView.Stretch)
+            header.setSectionResizeMode(indexes['move'], QHeaderView.Stretch)
 
-        populate_table(self.d_pkmn_i_3_table_level, 1)
+        if self.d_pkmn_i_3_move_class_lvl.isChecked():
+            populate_table(1)
+        elif self.d_pkmn_i_3_move_class_egg.isChecked():
+            populate_table(2)
+        elif self.d_pkmn_i_3_move_class_tut.isChecked():
+            populate_table(3)
+        elif self.d_pkmn_i_3_move_class_mac.isChecked():
+            populate_table(4)
+
+    def set_locations(self):
+        self.locations = self.get_locations()
+        table = self.d_pkmn_i_4_1_table
+        table.setHorizontalHeaderLabels(['Method', 'Rarity', 'Level'])
+        indexes = {'method': 0, 'rarity': 1, 'level': 2}
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(indexes['method'], QHeaderView.Stretch)
+        table.setRowCount(0)
+        table.horizontalHeader().hide()
+        self.d_pkmn_i_4_1_region.setText('')
+        self.d_pkmn_i_4_1_location.setText('')
+
+        def get_area():
+            areas = []
+            for loc in self.locations:
+                areas.append((loc[0], loc[1], loc[2]))
+            areas = set(areas)
+            return areas
+
+        def set_cursors(areas):
+            map = self.d_pkmn_i_4_1_loc
+            cursors = map.findChildren(QRadioButton)
+
+            for cursor in cursors:
+                cursor.hide()
+
+            for area in areas:
+                for c in cursors:
+                    cursor_id = re.sub(r'.*_', '', c.objectName())
+                    if str(area[0]) == cursor_id:
+                        c.show()
+
+        set_cursors(get_area())
+
+    def set_location_encounters(self):
+        table = self.d_pkmn_i_4_1_table
+        indexes = {'method': 0, 'rarity': 1, 'level': 2}
+
+        for cursor in self.d_pkmn_i_4_1_loc.findChildren(QRadioButton):
+            if cursor.isChecked():
+                cursor_id = re.sub(r'.*_', '', cursor.objectName())
+
+        selected_location = []
+
+        for loc in self.locations:
+            if cursor_id == str(loc[0]):
+                selected_location.append(loc)
+
+
+        table.horizontalHeader().show()
+        table.setRowCount(0)
+
+        for loc in selected_location:
+            self.d_pkmn_i_4_1_region.setText(loc[1])
+            self.d_pkmn_i_4_1_location.setText(loc[2])
+            print(loc)
+            row_pos = table.rowCount()
+            table.insertRow(row_pos)
+            method_name = QTableWidgetItem(loc[4])
+            table.setItem(row_pos, indexes['method'], method_name)
+            rarity = QTableWidgetItem(str(loc[3]))
+            table.setItem(row_pos, indexes['rarity'], rarity)
+            levels_data = str(loc[5]) + ' - ' + str(loc[6])
+            if loc[5] == loc[6]:
+                levels_data = str(loc[5])
+            levels = QTableWidgetItem(levels_data)
+            table.setItem(row_pos, indexes['level'], levels)
+
 
     def search_pkmn(self):
         query = self.i_pkmn_search_bar.text().lower().split()

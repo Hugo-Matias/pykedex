@@ -1,6 +1,6 @@
 import sys, sqlite3
 from PyQt5.QtGui import QPixmap, QIcon, QCursor
-from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem, QListView
+from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem, QListView, QRadioButton
 from PyQt5.QtCore import Qt, QEvent, QSettings, QFile, QIODevice, QTextStream
 from collections import defaultdict
 from gui import Ui_MainWindow
@@ -29,6 +29,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         self.last_view = 1  # 1 - Pokemon(default) | 2 - Pokedex
         self.item = None  # Current list selection. Used to fetch information from "objects"
         self.pokemon = None  # Current pokemon
+        self.locations = []
         # POKEDEX VIEW VARIABLES
         self.version_group_loader = []
         self.versions_dict = {}
@@ -113,7 +114,11 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
         self.d_pkmn_i_2_i_egg_comp_list.setMovement(QListView.Static)
         self.d_pkmn_i_2_i_egg_comp_list.itemClicked.connect(self.set_breeding_compatible)
         self.d_pkmn_i_2_i_f_cry.clicked.connect(self.play_audio_cry)
-
+        for move_class_btn in [self.d_pkmn_i_3_move_class_lvl, self.d_pkmn_i_3_move_class_egg,
+                               self.d_pkmn_i_3_move_class_tut, self.d_pkmn_i_3_move_class_mac]:
+            move_class_btn.toggled.connect(self.set_moves_table)
+        for cursor in self.d_pkmn_i_4_1_loc.findChildren(QRadioButton):
+            cursor.clicked.connect(self.set_location_encounters)
         #
         # START-UP FUNCTIONS
         #
@@ -308,13 +313,13 @@ class MainWindow(QMainWindow, Ui_MainWindow, PokedexView, PokemonView, IVs):
             if event.type() == QEvent.Enter and source in self.ability_names:
                 if source.objectName() == 'd_pkmn_i_2_i_d_ability_1':
                     if self.pokemon['abilities'][0]:
-                        self.statusbar.showMessage(self.pokemon['abilities'][0][1], 10000)
+                        self.statusbar.showMessage(self.pokemon['abilities'][0][1], 8000)
                 elif source.objectName() == 'd_pkmn_i_2_i_d_ability_2':
                     if self.pokemon['abilities'][1]:
-                        self.statusbar.showMessage(self.pokemon['abilities'][1][1], 10000)
+                        self.statusbar.showMessage(self.pokemon['abilities'][1][1], 8000)
                 elif source.objectName() == 'd_pkmn_i_2_i_d_hidden_ability':
                     if self.pokemon['abilities'][2]:
-                        self.statusbar.showMessage(self.pokemon['abilities'][2][1], 10000)
+                        self.statusbar.showMessage(self.pokemon['abilities'][2][1], 8000)
 
             def manage_evolution_states(index):
                 if event.type() == QEvent.MouseButtonPress and source == sprite_label:
